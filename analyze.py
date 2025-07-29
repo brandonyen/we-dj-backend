@@ -27,10 +27,10 @@ def camelot_from_key(key_name, scale):
     return MUSICKEY_TO_CAMELOT.get(key, "Unknown")
 
 def analyze_song(audio_path):
-    loader = es.MonoLoader(filename=audio_path)
+    loader = es.MonoLoader(filename=audio_path, useSvm=False)
     audio = loader()
 
-    rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
+    rhythm_extractor = es.RhythmExtractor()
     bpm, _, _, _, _ = rhythm_extractor(audio)
 
     key_extractor = es.KeyExtractor()
