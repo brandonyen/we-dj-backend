@@ -39,5 +39,72 @@ def split_audio(input_file, output_dir):
         torchaudio.save(output_path, stem, rate)
         print(f"Saved {name} to {output_path}")
 
+def build_instrumental(bass, drums, other):
+    return bass.overlay(drums).overlay(other)
+
+from pydub import AudioSegment
+
+def create_transition(songs_dir, transition_type="crossfade"):
+    # Load stems for current song
+    vocals_current = AudioSegment.from_file(songs_dir + "/current_song" + "/vocals.wav")
+    bass_current   = AudioSegment.from_file(songs_dir + "/current_song" + "/bass.wav")
+    drums_current  = AudioSegment.from_file(songs_dir + "/current_song" + "/drums.wav")
+    other_current  = AudioSegment.from_file(songs_dir + "/current_song" + "/other.wav")
+
+    # Load stems for transition song
+    vocals_transition = AudioSegment.from_file(songs_dir + "/transition_song" + "/vocals.wav")
+    bass_transition   = AudioSegment.from_file(songs_dir + "/transition_song" + "/bass.wav")
+    drums_transition  = AudioSegment.from_file(songs_dir + "/transition_song" + "/drums.wav")
+    other_transition  = AudioSegment.from_file(songs_dir + "/transition_song" + "/other.wav")
+
+    # Build instrumentals
+    instrumental_current = build_instrumental(bass_current, drums_current, other_current)
+    instrumental_transition = build_instrumental(bass_transition, drums_transition, other_transition)
+
+    # Combine vocals with instrumentals
+    song_current = instrumental_current.overlay(vocals_current)
+    song_transition = instrumental_transition.overlay(vocals_transition)
+
+    if transition_type == "crossfade":
+        vocals_current_down = 10000
+        vocals_transition_in = 15000
+        crossfade_duration = 5000
+
+        # Part 1: start of current song
+        full_current = song_current[:vocals_current_down]
+
+        # Part 2: current fades out, transition instruments fade in
+        current_fade_out = instrumental_current[vocals_current_down:vocals_transition_in].fade_out(crossfade_duration)
+        current_fade_out = current_fade_out.overlay(vocals_current[vocals_current_down:vocals_transition_in].fade_out(3000))
+        current_fade_out = current_fade_out.overlay(instrumental_transition[0:].fade_in(crossfade_duration))
+
+        # Part 3: vocals from transition fade in
+        transition_vocals_fade_in = vocals_transition[5000:10000].fade_in(crossfade_duration)
+        transition_vocals_fade_in = transition_vocals_fade_in.overlay(instrumental_transition[5000:])
+
+        # Part 4: rest of transition song
+        transition_remainder = vocals_transition[10000:].overlay(instrumental_transition[10000:])
+
+        final_transition = full_current + current_fade_out + transition_vocals_fade_in + transition_remainder
+        output_file = songs_dir + "/crossfade_dj_transition.mp3"
+
+    elif transition_type == "scratch":
+        scratch_start = 15000
+        full_current = song_current[:scratch_start]
+
+        scratch_loop = AudioSegment.from_file('transitions' + "/scratch_loop.wav")[:600]
+
+        final_transition = full_current + scratch_loop + song_transition
+        output_file = songs_dir + "/scratch_dj_transition.mp3"
+
+    else:
+        raise ValueError(f"Unsupported transition type: {transition_type}")
+
+    final_transition.export(output_file, format="mp3")
+    print(f"{transition_type.title()} DJ Transition created!")
+
 extract_chorus('./temp/current_song/song.mp3', './temp/current_song/chorus.mp3')
 split_audio('./temp/current_song/chorus.mp3', './temp/current_song')
+extract_chorus('./temp/transition_song/song.mp3', './temp/transition_song/chorus.mp3')
+split_audio('./temp/transition_song/chorus.mp3', './temp/transition_song')
+create_transition('./temp', 'scratch')
