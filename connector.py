@@ -22,5 +22,4 @@ def transition_songs(output_dir, transition_type):
     split_audio(output_dir + '/current_song/chorus.mp3', output_dir + '/current_song')
     extract_chorus(output_dir + "/transition_song/song.mp3", output_dir + "/transition_song/chorus.mp3")
     split_audio(output_dir + '/transition_song/chorus.mp3', output_dir + '/transition_song')
-    match_bpm(output_dir + '/current_song', output_dir + '/transition_song')
     create_transition(output_dir, transition_type)
