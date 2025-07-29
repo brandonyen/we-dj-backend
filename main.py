@@ -4,10 +4,15 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
-from search import search_and_download_youtube_song
+from supabase import create_client, Client
+from connector import search_download_transition
 
 app = FastAPI()
 load_dotenv()
+
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,5 +24,6 @@ app.add_middleware(
 
 @app.get('/api/search_song')
 async def search_song(query: str):
-    os.mkdir('temp/current_song')
-    search_and_download_youtube_song(query, 'temp')
+    os.makedirs('temp/current_song', exist_ok=True)
+    os.makedirs('temp/transition_song', exist_ok=True)
+    search_download_transition(query)

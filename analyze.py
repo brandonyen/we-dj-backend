@@ -7,10 +7,22 @@ MUSICKEY_TO_CAMELOT = {
     'F#m': '11A', 'Gm': '6A', 'G#m': '1A', 'Am': '8A', 'A#m': '3A', 'Bm': '10A'
 }
 
+def normalize_key(key):
+    flats_to_sharps = {
+        'DB': 'C#',
+        'EB': 'D#',
+        'GB': 'F#',
+        'AB': 'G#',
+        'BB': 'A#'
+    }
+    key = key.upper()
+    if key in flats_to_sharps:
+        return flats_to_sharps[key]
+    return key
+
 def camelot_from_key(key_name, scale):
-    """Convert Essentia key name and scale to Camelot notation."""
-    key = key_name.upper()
-    if scale == 'minor':
+    key = normalize_key(key_name)
+    if scale.lower() == 'minor':
         key += 'm'
     return MUSICKEY_TO_CAMELOT.get(key, "Unknown")
 
@@ -22,15 +34,13 @@ def analyze_song(audio_path):
     bpm, _, _, _, _ = rhythm_extractor(audio)
 
     key_extractor = es.KeyExtractor()
-    key, scale, strength = key_extractor(audio)
+    key, scale, _ = key_extractor(audio)
+
+    print(key, scale)
 
     camelot = camelot_from_key(key, scale)
 
     loudness = es.Loudness()
     loudness_val = loudness(audio)
 
-    return {
-        'bpm': round(bpm, 2),
-        'camelot_key': camelot,
-        'loudness': round(loudness_val, 2)
-    }
+    return round(bpm, 2), camelot, round(loudness_val, 2)
