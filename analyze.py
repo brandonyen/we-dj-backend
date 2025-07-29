@@ -1,9 +1,5 @@
 import essentia.standard as es
 
-es.log.infoActive = False
-es.log.warningActive = False
-es.log.errorActive = False
-
 MUSICKEY_TO_CAMELOT = {
     'C': '8B', 'C#': '3B', 'D': '10B', 'D#': '5B', 'E': '12B', 'F': '7B',
     'F#': '2B', 'G': '9B', 'G#': '4B', 'A': '11B', 'A#': '6B', 'B': '1B',
