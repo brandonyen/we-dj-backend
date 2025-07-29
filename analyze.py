@@ -41,4 +41,8 @@ def analyze_song(audio_path):
     loudness = es.Loudness()
     loudness_val = loudness(audio)
 
-    return round(bpm, 2), camelot, round(loudness_val, 2)
+    energy = es.Energy()
+    energy_val = energy(audio)
+    normalized_energy = energy_val / len(audio)
+
+    return round(bpm, 2), camelot, round(loudness_val, 2), normalized_energy

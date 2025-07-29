@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 from supabase import create_client, Client
 from connector import search_download, transition_songs
+import uuid
 
 app = FastAPI()
 load_dotenv()
@@ -24,10 +25,11 @@ app.add_middleware(
 
 @app.get('/api/search_song')
 async def search_song(query: str):
-    os.makedirs('temp/current_song', exist_ok=True)
-    os.makedirs('temp/transition_song', exist_ok=True)
-    current_song_name, transition_song_name = search_download(query)
+    temp_uuid = 'temp/' + str(uuid.uuid4())
+    os.makedirs(temp_uuid + '/current_song', exist_ok=True)
+    os.makedirs(temp_uuid + '/transition_song', exist_ok=True)
+    current_song_name, transition_song_name = search_download(query, temp_uuid)
     response = supabase.storage.from_('transition-songs').download(transition_song_name)
-    with open('temp/transition_song/song.mp3', "wb") as f:
+    with open(temp_uuid + '/transition_song/song.mp3', "wb") as f:
         f.write(response)
-    transition_songs('./temp')
+    transition_songs('./' + temp_uuid, 'crossfade')

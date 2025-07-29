@@ -12,12 +12,13 @@ def analyze_folder(folder_path, output_csv):
                 file_path = os.path.join(root, file)
                 print(f"Analyzing {file_path}...")
                 try:
-                    bpm, camelot_key, loudness = analyze_song(file_path)
+                    bpm, camelot_key, loudness, energy = analyze_song(file_path)
                     # Remove key and scale if present
                     features = {
                         'bpm': bpm,
                         'camelot_key': camelot_key,
-                        'loudness': loudness
+                        'loudness': loudness,
+                        'energy': energy
                     }
                     features['filename'] = file
                     results.append(features)
@@ -25,7 +26,7 @@ def analyze_folder(folder_path, output_csv):
                     print(f"Error processing {file}: {e}")
 
     with open(output_csv, mode='w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['filename', 'bpm', 'camelot_key', 'loudness'])
+        writer = csv.DictWriter(f, fieldnames=['filename', 'bpm', 'camelot_key', 'loudness', 'energy'])
         writer.writeheader()
         for row in results:
             writer.writerow(row)
