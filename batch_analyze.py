@@ -13,13 +13,16 @@ def analyze_folder(folder_path, output_csv):
                 print(f"Analyzing {file_path}...")
                 try:
                     features = analyze_song(file_path)
+                    # Remove key and scale if present
+                    features.pop('key', None)
+                    features.pop('scale', None)
                     features['filename'] = file
                     results.append(features)
                 except Exception as e:
                     print(f"Error processing {file}: {e}")
 
     with open(output_csv, mode='w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['filename', 'bpm', 'key', 'scale', 'camelot_key', 'loudness'])
+        writer = csv.DictWriter(f, fieldnames=['filename', 'bpm', 'camelot_key', 'loudness'])
         writer.writeheader()
         for row in results:
             writer.writerow(row)

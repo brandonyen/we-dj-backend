@@ -31,8 +31,6 @@ def analyze_song(audio_path):
 
     return {
         'bpm': round(bpm, 2),
-        'key': key,
-        'scale': scale,
         'camelot_key': camelot,
         'loudness': round(loudness_val, 2)
     }
