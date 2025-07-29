@@ -15,7 +15,6 @@ dora_search==0.1.12
 dotenv==0.9.9
 einops==0.8.1
 email_validator==2.2.0
-essentia==2.1b6.dev1389
 fastapi==0.116.1
 fastapi-cli==0.0.8
 fastapi-cloud-cli==0.1.5
