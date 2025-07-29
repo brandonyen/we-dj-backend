@@ -7,15 +7,19 @@ import os
 from supabase import create_client, Client
 from connector import search_download, transition_songs
 import tempfile
+import base64
 
 app = FastAPI()
 load_dotenv()
 
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
 SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
-if SUPABASE_URL is None:
-    raise RuntimeError("SUPABASE_URL is not set!")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+cookie_b64 = supabase.storage.from_('transition-songs').download('cookies.b64')
+cookie_path = "/tmp/youtube_cookies.txt"
+with open(cookie_path, "wb") as f:
+    f.write(base64.b64decode(cookie_b64))
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +29,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root():
+    return {"message": "We-DJ backend is running!"}
+
 @app.get('/api/search_song')
 async def search_song(query: str):
     with tempfile.TemporaryDirectory(prefix="transition_") as temp_dir:
@@ -33,7 +41,7 @@ async def search_song(query: str):
         os.makedirs(current_dir, exist_ok=True)
         os.makedirs(transition_dir, exist_ok=True)
 
-        current_song_name, transition_song_name = search_download(query, temp_dir)
+        current_song_name, transition_song_name = search_download(query, temp_dir, cookie_path)
 
         response = supabase.storage.from_('transition-songs').download(transition_song_name)
         transition_path = os.path.join(transition_dir, "song.mp3")
