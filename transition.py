@@ -102,9 +102,3 @@ def create_transition(songs_dir, transition_type="crossfade"):
 
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
-
-extract_chorus('./temp/current_song/song.mp3', './temp/current_song/chorus.mp3')
-split_audio('./temp/current_song/chorus.mp3', './temp/current_song')
-extract_chorus('./temp/transition_song/song.mp3', './temp/transition_song/chorus.mp3')
-split_audio('./temp/transition_song/chorus.mp3', './temp/transition_song')
-create_transition('./temp', 'scratch')

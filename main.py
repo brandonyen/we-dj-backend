@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 from supabase import create_client, Client
-from connector import search_download_transition
+from connector import search_download, transition_songs
 
 app = FastAPI()
 load_dotenv()
@@ -26,4 +26,8 @@ app.add_middleware(
 async def search_song(query: str):
     os.makedirs('temp/current_song', exist_ok=True)
     os.makedirs('temp/transition_song', exist_ok=True)
-    search_download_transition(query)
+    current_song_name, transition_song_name = search_download(query)
+    response = supabase.storage.from_('transition-songs').download(transition_song_name)
+    with open('temp/transition_song/song.mp3', "wb") as f:
+        f.write(response)
+    transition_songs('./temp')

@@ -36,8 +36,6 @@ def analyze_song(audio_path):
     key_extractor = es.KeyExtractor()
     key, scale, _ = key_extractor(audio)
 
-    print(key, scale)
-
     camelot = camelot_from_key(key, scale)
 
     loudness = es.Loudness()
