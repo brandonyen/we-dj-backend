@@ -32,7 +32,7 @@ def extract_chorus(input_file, output_path, duration=15):
 def split_audio(input_file, output_dir):
     model = get_model('htdemucs')
     wav, rate = torchaudio.load(input_file)
-    device = 'mps' if torch.mps.is_available() else 'cpu'
+    device = 'mps' if torch.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu'
     sources = apply_model(model, wav.unsqueeze(0), device=device)
     os.makedirs(output_dir, exist_ok=True)
     for stem, name in zip(sources[0], ['drums', 'bass', 'other', 'vocals']):
