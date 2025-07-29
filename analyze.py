@@ -1,5 +1,9 @@
 import essentia.standard as es
 
+es.warningLevelActive = False
+es.infoLevelActive = False
+es.errorLevelActive = False
+
 MUSICKEY_TO_CAMELOT = {
     'C': '8B', 'C#': '3B', 'D': '10B', 'D#': '5B', 'E': '12B', 'F': '7B',
     'F#': '2B', 'G': '9B', 'G#': '4B', 'A': '11B', 'A#': '6B', 'B': '1B',
@@ -27,10 +31,10 @@ def camelot_from_key(key_name, scale):
     return MUSICKEY_TO_CAMELOT.get(key, "Unknown")
 
 def analyze_song(audio_path):
-    loader = es.MonoLoader(filename=audio_path, useSvm=False)
+    loader = es.MonoLoader(filename=audio_path)
     audio = loader()
 
-    rhythm_extractor = es.RhythmExtractor()
+    rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
     bpm, _, _, _, _ = rhythm_extractor(audio)
 
     key_extractor = es.KeyExtractor()
