@@ -11,9 +11,15 @@ import tempfile
 app = FastAPI()
 load_dotenv()
 
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    SUPABASE_URL = os.environ["SUPABASE_URL"]
+    SUPABASE_KEY = os.environ["SUPABASE_KEY"]
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    print("❌ Supabase init failed")
+    import traceback
+    print(traceback.format_exc())
+    raise
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +31,10 @@ app.add_middleware(
 
 from fastapi import Request
 import traceback
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.get('/api/search_song')
 async def search_song(query: str, request: Request):
