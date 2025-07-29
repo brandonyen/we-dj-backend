@@ -6,7 +6,7 @@ from transition import extract_chorus, split_audio, create_transition, match_bpm
 
 def search_download(query, path):
     current_song_name = search_and_download_youtube_song(query, path + '/current_song')
-    bpm, camelot, loudness, energy = analyze_song('./' + path + '/current_song/song.mp3')
+    bpm, camelot, loudness, energy = analyze_song(path + '/current_song/song.mp3')
     current_song_data = {
         'bpm': bpm,
         'camelot_key': camelot,

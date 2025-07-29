@@ -102,7 +102,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         transition_remainder = vocals_transition[10000:].overlay(instrumental_transition[10000:])
 
         final_transition = full_current + current_fade_out + transition_vocals_fade_in + transition_remainder
-        output_file = songs_dir + "/crossfade_dj_transition.mp3"
+        output_file = songs_dir + "/dj_transition.mp3"
 
     elif transition_type == "scratch":
         scratch_start = 15000
@@ -111,7 +111,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         scratch_loop = AudioSegment.from_file('transitions' + "/scratch_loop.wav")[:600]
 
         final_transition = full_current + scratch_loop + song_transition
-        output_file = songs_dir + "/scratch_dj_transition.mp3"
+        output_file = songs_dir + "/sdj_transition.mp3"
 
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
