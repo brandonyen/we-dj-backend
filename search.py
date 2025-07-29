@@ -22,7 +22,7 @@ def search_and_download_youtube_song(query, output_dir):
 
     download_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': f'{output_dir}/%(title)s.%(ext)s',
+        'outtmpl': f'{output_dir}/transition_song.%(ext)s',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',

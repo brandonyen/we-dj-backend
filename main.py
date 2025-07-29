@@ -18,6 +18,6 @@ app.add_middleware(
 )
 
 @app.get('/api/search_song')
-def search_song(query: str):
-    os.mkdir('temp')
+async def search_song(query: str):
+    os.mkdir('temp/current_song')
     search_and_download_youtube_song(query, 'temp')
