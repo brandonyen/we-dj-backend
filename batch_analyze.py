@@ -12,10 +12,13 @@ def analyze_folder(folder_path, output_csv):
                 file_path = os.path.join(root, file)
                 print(f"Analyzing {file_path}...")
                 try:
-                    features = analyze_song(file_path)
+                    bpm, camelot_key, loudness = analyze_song(file_path)
                     # Remove key and scale if present
-                    features.pop('key', None)
-                    features.pop('scale', None)
+                    features = {
+                        'bpm': bpm,
+                        'camelot_key': camelot_key,
+                        'loudness': loudness
+                    }
                     features['filename'] = file
                     results.append(features)
                 except Exception as e:

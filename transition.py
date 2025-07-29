@@ -6,6 +6,7 @@ from demucs.pretrained import get_model
 from demucs.apply import apply_model
 import torch
 import torchaudio
+import soundfile as sf
 
 def extract_chorus(input_file, output_path, duration=15):
     audio = AudioSegment.from_mp3(input_file)
@@ -42,7 +43,22 @@ def split_audio(input_file, output_dir):
 def build_instrumental(bass, drums, other):
     return bass.overlay(drums).overlay(other)
 
-from pydub import AudioSegment
+def match_bpm(current_song, transition_song):
+    source_audio, sr = librosa.load(os.path.join(current_song, "song.mp3"), sr=None)
+    target_audio, _ = librosa.load(os.path.join(transition_song, "song.mp3"), sr=sr)
+
+    source_bpm = librosa.feature.tempo(y=source_audio, sr=sr)[0]
+    target_bpm = librosa.feature.tempo(y=target_audio, sr=sr)[0]
+    stretch_ratio = source_bpm / target_bpm
+
+    for stem in ['bass', 'drums', 'other', 'vocals']:
+        stem_path = os.path.join(transition_song, f"{stem}.wav")
+        y, stem_sr = librosa.load(stem_path, sr=None)
+
+        y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
+        y_stretched = librosa.util.normalize(y_stretched)
+
+        sf.write(stem_path, y_stretched, stem_sr)
 
 def create_transition(songs_dir, transition_type="crossfade"):
     # Load stems for current song

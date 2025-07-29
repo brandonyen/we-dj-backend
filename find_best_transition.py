@@ -12,7 +12,7 @@ def transition_score(source, target):
     camelot_penalty = 0 if target['camelot_key'] in compatible_camelot_keys(source['camelot_key']) else 10
     bpm_diff = abs(source['bpm'] - target['bpm'])
     loudness_diff = abs(source['loudness'] - target['loudness'])
-    return camelot_penalty + bpm_diff * 0.1 + loudness_diff * 0.2
+    return camelot_penalty + bpm_diff * 0.3 + loudness_diff * 0.1
 
 def is_too_similar(song1, song2, bpm_thresh=0.5, loudness_thresh=0.5):
     same_key = song1['camelot_key'] == song2['camelot_key']
@@ -39,5 +39,7 @@ def find_best_transition(current_song_data, csv_path):
 
     candidates['score'] = candidates.apply(lambda row: transition_score(current_song_data, row), axis=1)
     best_match = candidates.sort_values(by='score').iloc[0]
+
+    print(candidates.sort_values(by='score'))
 
     return best_match['filename']
