@@ -8,6 +8,7 @@ from supabase import create_client, Client
 from connector import search_download, transition_songs
 import tempfile
 import base64
+import asyncio
 
 app = FastAPI()
 load_dotenv()
@@ -35,6 +36,9 @@ def root():
 
 @app.get('/api/search_song')
 async def search_song(query: str):
+    return await asyncio.to_thread(_search_and_transition, query)
+
+def _search_and_transition(query: str):
     with tempfile.TemporaryDirectory(prefix="transition_") as temp_dir:
         current_dir = os.path.join(temp_dir, "current_song")
         transition_dir = os.path.join(temp_dir, "transition_song")
@@ -52,8 +56,6 @@ async def search_song(query: str):
 
         final_mp3 = os.path.join(temp_dir, "dj_transition.mp3")
 
-        # Copy the file to a temp path outside the context manager
-        # because FileResponse streams the file *after* returning
         final_temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         final_temp_path.close()
         os.rename(final_mp3, final_temp_path.name)
