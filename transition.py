@@ -131,7 +131,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     elif transition_type == "steve":
         bpm1, bpm2 = match_bpm(songs_dir + "/current_song" + "/vocals.wav", songs_dir + "/transition_song" + "/vocals.wav")
         scratch = AudioSegment.from_file('transitions' + "/scratch.wav")[:60000 / (bpm1*2)]
-        vocals_a_matched = AudioSegment.from_file(songs_dir + "/current_song" + "/vocals_matched.wav")
+        vocals_a_matched = AudioSegment.from_file(songs_dir + "/current_song" + "/vocals.wav")
         silence = AudioSegment.silent(duration=60000 / (bpm2 * 2))
 
         instrument_fade = 8500
