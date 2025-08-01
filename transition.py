@@ -9,6 +9,10 @@ import torchaudio
 import soundfile as sf
 
 def extract_chorus(input_file, output_path, duration=15):
+    if os.path.exists(output_path):
+        print(f"{output_path} already exists. Skipping extraction.")
+        return
+    
     audio = AudioSegment.from_mp3(input_file)
     samples = np.array(audio.get_array_of_samples()).astype(np.float32)
 
@@ -30,6 +34,11 @@ def extract_chorus(input_file, output_path, duration=15):
     chorus.export(output_path, format="mp3")
 
 def split_audio(input_file, output_dir):
+    expected_files = [os.path.join(output_dir, f"{name}.wav") for name in ['drums', 'bass', 'other', 'vocals']]
+    if all(os.path.exists(f) for f in expected_files):
+        print(f"All output files already exist in {output_dir}. Skipping splitting.")
+        return
+    
     model = get_model('htdemucs')
     wav, rate = torchaudio.load(input_file)
     device = 'mps' if torch.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu'
