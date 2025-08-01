@@ -113,6 +113,18 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = full_current + scratch_loop + song_transition
         output_file = songs_dir + "/sdj_transition.mp3"
 
+    elif transition_type == "crazy_scratch":
+        scratch_start = 12500
+
+        # Full song A
+        full_current = song_current[:scratch_start]
+
+        # Scratching
+        scratch_loop = AudioSegment.from_file('transitions' + "/crazy_scratch_loop.wav")
+
+        # Full transition
+        final_transition = full_current + scratch_loop + song_transition
+        
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
 
