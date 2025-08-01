@@ -59,6 +59,8 @@ def match_bpm(current_song, transition_song):
         y_stretched = librosa.util.normalize(y_stretched)
 
         sf.write(stem_path, y_stretched, stem_sr)
+    
+    return source_bpm, target_bpm
 
 def create_transition(songs_dir, transition_type="crossfade"):
     # Load stems for current song
@@ -124,7 +126,37 @@ def create_transition(songs_dir, transition_type="crossfade"):
 
         # Full transition
         final_transition = full_current + scratch_loop + song_transition
-        
+        output_file = songs_dir + "/crazy_sdj_transition.mp3"
+    
+    elif transition_type == "steve":
+        bpm1, bpm2 = match_bpm(songs_dir + "/current_song" + "/vocals.wav", songs_dir + "/transition_song" + "/vocals.wav")
+        scratch = AudioSegment.from_file('transitions' + "/scratch.wav")[:60000 / (bpm1*2)]
+        vocals_a_matched = AudioSegment.from_file(songs_dir + "/current_song" + "/vocals_matched.wav")
+        silence = AudioSegment.silent(duration=60000 / (bpm2 * 2))
+
+        instrument_fade = 8500
+        scratch_sound = 15000
+        instrument_new = 15500
+        full_new = 22000
+
+        full_current = song_current[:instrument_fade]
+
+        a_instrument_fade = vocals_current[instrument_fade:scratch_sound]
+        a_instrument_fade = a_instrument_fade.overlay(instrumental_current[instrument_fade:scratch_sound].apply_gain(-120))
+
+        scratch_time = vocals_current[scratch_sound:instrument_new]
+        scratch_loop = scratch + scratch
+        scratch_time = scratch_time.overlay(scratch_loop)
+
+        b_fade = instrumental_transition[:full_new - instrument_new]
+        b_fade = b_fade.overlay(vocals_a_matched[instrument_new * (bpm2 / bpm1):full_new * (bpm2 / bpm1)].fade_out(full_new-instrument_new))
+
+        b_instrumental = instrumental_transition[full_new - instrument_new:]
+        full_b = b_instrumental.overlay(vocals_transition[full_new - instrument_new:].fade_in(3000))
+
+        final_transition = full_current + a_instrument_fade + scratch_loop + silence + b_fade + full_b
+        output_file = songs_dir + "/steve_transition.mp3"
+    
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
 
