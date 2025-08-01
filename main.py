@@ -53,7 +53,6 @@ def _search_and_transition(query: str):
         with open(transition_path, "wb") as f:
             f.write(response)
         
-
         # Transition Type Random Selection
         def choose_weighted_transition(prob_dict):
             transitions = list(prob_dict.keys())
