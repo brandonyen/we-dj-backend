@@ -74,8 +74,13 @@ def _search_and_transition(query: str):
         final_temp_path.close()
         os.rename(final_mp3, final_temp_path.name)
 
-    return FileResponse(
+    response = FileResponse(
         path=final_temp_path.name,
         media_type="audio/mpeg",
         filename="dj_transition.mp3"
     )
+        
+    response.headers['X-Current-Song'] = current_song_name
+    response.headers['X-Transition-Song'] = transition_song_name
+
+    return response
