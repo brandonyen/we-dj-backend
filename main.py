@@ -48,10 +48,8 @@ def _search_and_transition(query: str):
 
         transition_song = os.path.join('songs', transition_song_name)
         transition_path = os.path.join(transition_dir, "song.mp3")
-        with open(transition_path, "wb") as f:
-            f.write(response)
+        shutil.copyfile(transition_song, transition_path)
         
-
         # Transition Type Selection
         transition_songs(temp_dir, 'crossfade')
 
