@@ -3,6 +3,8 @@ from search import search_and_download_youtube_song
 from analyze import analyze_song
 from find_best_transition import find_best_transition
 from transition import extract_chorus, split_audio, create_transition, match_bpm
+import pandas as pd
+import shutil
 
 def search_download(query, path, cookie_path):
     current_song_name = search_and_download_youtube_song(query, path + '/current_song', cookie_path)
@@ -13,8 +15,24 @@ def search_download(query, path, cookie_path):
         'loudness': loudness,
         'energy': energy
     }
-    print(bpm, camelot, loudness, energy)
     transition_song_name = find_best_transition(current_song_data, 'song_metadata.csv')
+    df = pd.read_csv('song_metadata.csv')
+    if not ((df['filename'] == current_song_name).any()):
+        new_row = {
+            'filename': current_song_name,
+            'bpm': bpm,
+            'camelot_key': camelot,
+            'loudness': loudness,
+            'energy': energy
+        }
+        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        df.to_csv('song_metadata.csv', index=False)
+        song_path = os.path.join(path, "current_song", "song.mp3")
+        print(song_path)
+        safe_name = current_song_name.replace("/", "_").replace("\\", "_")
+        write_path = os.path.join('songs', f"{safe_name}.mp3")
+        print(write_path)
+        shutil.copyfile(song_path, write_path)
     return current_song_name, transition_song_name
 
 def transition_songs(output_dir, transition_type):
