@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 import os
 from connector import search_download, transition_songs
 import tempfile
-import base64
+import uuid
 import asyncio
 import random
 import shutil
+import urllib.parse
 
 app = FastAPI()
 load_dotenv()
@@ -64,19 +65,21 @@ def _search_and_transition(query: str):
         }
         transition_songs(temp_dir, choose_weighted_transition(transitions_prob_dict))
 
-        final_mp3 = os.path.join(temp_dir, "dj_transition.mp3")
+        folder_uuid = str(uuid.uuid4())
+        uuid_folder = os.path.join("temp", folder_uuid)
+        os.makedirs(uuid_folder, exist_ok=True)
 
-        final_temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-        final_temp_path.close()
-        os.rename(final_mp3, final_temp_path.name)
+        final_mp3 = os.path.join(temp_dir, "dj_transition.mp3")
+        output_path = os.path.join(uuid_folder, "dj_transition.mp3")
+        shutil.move(final_mp3, output_path)
 
     response = FileResponse(
-        path=final_temp_path.name,
+        path=output_path,
         media_type="audio/mpeg",
         filename="dj_transition.mp3"
     )
-        
-    response.headers['X-Current-Song'] = current_song_name
-    response.headers['X-Transition-Song'] = transition_song_name
+
+    response.headers['X-Current-Song'] = urllib.parse.quote(current_song_name)
+    response.headers['X-Transition-Song'] = urllib.parse.quote(transition_song_name)
 
     return response
