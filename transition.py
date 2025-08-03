@@ -165,19 +165,18 @@ def create_transition(songs_dir, transition_type="crossfade"):
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # On Beat?
-        start_time_ms = transition_start_other # start at 8+ seconds
-        tease_duration_ms = 12000 # 12 seconds
+        tease_duration_ms = 10000
 
         # PART 1: Song A
-        part1 = song_current[:start_time_ms]
+        part1 = song_current[:vocals_current_down]
 
         # PART 2: Song A instrumental + Song B vocals
-        a_instr_tease = instrumental_current[start_time_ms:start_time_ms + tease_duration_ms]
-        b_vocals_tease = vocals_b_matched[:tease_duration_ms].fade_in(2000)
+        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms]
+        b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in+tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
         # PART 3: Song B continued
-        part3 = song_transition[tease_duration_ms * ratio:]
+        part3 = song_transition[(vocals_transition_in+tease_duration_ms) * ratio:]
 
         final_transition = part1 + part2 + part3
         output_file = songs_dir + "/dj_transition.mp3"
