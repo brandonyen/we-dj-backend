@@ -53,19 +53,19 @@ def get_beat_times(audio_segment):
     beat_times = librosa.frames_to_time(beats, sr=sr)
     return beat_times
 
-def match_bpm(current_song, transition_song):
-    source_audio, sr = librosa.load(current_song, sr=None)
-    target_audio, _ = librosa.load(transition_song, sr=sr)
+def match_bpm(songs_dir, sound_to_match):
+    source_audio, sr = librosa.load(songs_dir + "/current_song/song.mp3", sr=None)
+    target_audio, _ = librosa.load(songs_dir + "/transition_song/song.mp3", sr=sr)
 
     source_bpm = librosa.feature.tempo(y=source_audio, sr=sr)[0]
     target_bpm = librosa.feature.tempo(y=target_audio, sr=sr)[0]
     stretch_ratio = source_bpm / target_bpm
 
-    y, stem_sr = librosa.load(transition_song, sr=None)
+    y, stem_sr = librosa.load(sound_to_match, sr=None)
     y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
     y_stretched = librosa.util.normalize(y_stretched)
 
-    stem_path = os.path.splitext(transition_song)[0] + "_matched.wav"
+    stem_path = os.path.splitext(sound_to_match)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
 
     return stem_path
@@ -161,8 +161,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_tease":
-        matched_vocals_path = match_bpm(songs_dir + "/current_song/vocals.wav", songs_dir + "/transition_song/vocals.wav")
-
+        matched_vocals_path = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # On Beat?
