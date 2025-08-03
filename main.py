@@ -33,8 +33,8 @@ def root():
     return {"message": "We-DJ backend is running!"}
 
 @app.get('/api/search_song')
-async def search_song(query: str):
-    return await asyncio.to_thread(_search_and_transition, query)
+async def search_song(query: str, transition_type='crossfade'):
+    return await asyncio.to_thread(_search_and_transition, query, transition_type)
 
 def extract_thumbnail(mp3_path, output_image_path):
     audio = MP3(mp3_path, ID3=ID3)
@@ -52,7 +52,7 @@ def extract_thumbnail(mp3_path, output_image_path):
     
     print("No embedded thumbnail found.")
 
-def _search_and_transition(query: str):
+def _search_and_transition(query: str, transition_type: str):
     with tempfile.TemporaryDirectory(prefix="transition_") as temp_dir:
         current_dir = os.path.join(temp_dir, "current_song")
         transition_dir = os.path.join(temp_dir, "transition_song")
@@ -68,7 +68,7 @@ def _search_and_transition(query: str):
         shutil.copyfile(transition_song, transition_path)
         
         # Transition Type Selection
-        transition_songs(temp_dir, 'vocals_crossover')
+        transition_songs(temp_dir, transition_type)
 
         folder_uuid = str(uuid.uuid4())
         uuid_folder = os.path.join("temp", folder_uuid)
