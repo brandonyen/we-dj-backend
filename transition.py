@@ -160,9 +160,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_tease":
-        match_bpm(songs_dir + "/current_song/vocals.wav", songs_dir + "/transition_song/vocals.wav")
+        matched_vocals_path = match_bpm(songs_dir + "/current_song/vocals.wav", songs_dir + "/transition_song/vocals.wav")
 
-        matched_vocals_path = os.path.join(songs_dir, "/transition_song/vocals_matched.wav")
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # On Beat?
