@@ -57,10 +57,24 @@ def match_bpm(source, target):
     source_audio, sr = librosa.load(source, sr=None)
     target_audio, _ = librosa.load(target, sr=sr)
 
-    source_bpm = librosa.feature.tempo(y=source_audio, sr=sr)[0]
-    target_bpm = librosa.feature.tempo(y=target_audio, sr=sr)[0]
+    # Improve tempo estimation accuracy with beat tracking
+    source_tempo, _ = librosa.beat.beat_track(y=source_audio, sr=sr, units='time')
+    target_tempo, _ = librosa.beat.beat_track(y=target_audio, sr=sr, units='time')
+
+    # Alternatively use tempogram + autocorrelation for robust BPM
+    def get_bpm(y, sr):
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+        tempogram = librosa.feature.tempogram(onset_envelope=onset_env, sr=sr)
+        ac = librosa.autocorrelate(onset_env, max_size=tempogram.shape[1])
+        tempo_est = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, aggregate=None)
+        return np.median(tempo_est)
+
+    source_bpm = get_bpm(source_audio, sr)
+    target_bpm = get_bpm(target_audio, sr)
+
     stretch_ratio = source_bpm / target_bpm
 
+    # Stretch and normalize
     y, stem_sr = librosa.load(target, sr=None)
     y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
     y_stretched = librosa.util.normalize(y_stretched)
