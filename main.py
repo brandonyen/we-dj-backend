@@ -68,7 +68,7 @@ def _search_and_transition(query: str):
         shutil.copyfile(transition_song, transition_path)
         
         # Transition Type Selection
-        transition_songs(temp_dir, 'scratch')
+        transition_songs(temp_dir, 'crossfade')
 
         folder_uuid = str(uuid.uuid4())
         uuid_folder = os.path.join("temp", folder_uuid)
