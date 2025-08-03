@@ -61,13 +61,14 @@ def match_bpm(current_song, transition_song):
     target_bpm = librosa.feature.tempo(y=target_audio, sr=sr)[0]
     stretch_ratio = source_bpm / target_bpm
 
-    stem_path = transition_song[:-4] + "_matched.wav"
-    y, stem_sr = librosa.load(stem_path, sr=None)
-
+    y, stem_sr = librosa.load(transition_song, sr=None)
     y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
     y_stretched = librosa.util.normalize(y_stretched)
 
+    stem_path = os.path.splitext(transition_song)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
+
+    return stem_path
 
 def create_transition(songs_dir, transition_type="crossfade"):
     # Load stems for current song
