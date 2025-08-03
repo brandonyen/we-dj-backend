@@ -113,7 +113,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     crossfade_beats = 4
 
     # Desired minimum time before transition in seconds
-    min_time_before_transition = 12
+    min_time_before_transition = 8
 
     # Find the beat index closest to min_time_before_transition
     start_beat_idx = 0
