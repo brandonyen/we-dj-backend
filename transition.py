@@ -54,23 +54,20 @@ def get_beat_times(audio_segment):
     return beat_times
 
 def match_bpm(current_song, transition_song):
-    source_audio, sr = librosa.load(os.path.join(current_song, "song.mp3"), sr=None)
-    target_audio, _ = librosa.load(os.path.join(transition_song, "song.mp3"), sr=sr)
+    source_audio, sr = librosa.load(current_song, sr=None)
+    target_audio, _ = librosa.load(transition_song, sr=sr)
 
     source_bpm = librosa.feature.tempo(y=source_audio, sr=sr)[0]
     target_bpm = librosa.feature.tempo(y=target_audio, sr=sr)[0]
     stretch_ratio = source_bpm / target_bpm
 
-    for stem in ['bass', 'drums', 'other', 'vocals']:
-        stem_path = os.path.join(transition_song, f"{stem}.wav")
-        y, stem_sr = librosa.load(stem_path, sr=None)
+    stem_path = os.path.join(transition_song[:-4], f"_matched.wav")
+    y, stem_sr = librosa.load(stem_path, sr=None)
 
-        y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
-        y_stretched = librosa.util.normalize(y_stretched)
+    y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
+    y_stretched = librosa.util.normalize(y_stretched)
 
-        sf.write(stem_path, y_stretched, stem_sr)
-    
-    return source_bpm, target_bpm
+    sf.write(stem_path, y_stretched, stem_sr)
 
 def create_transition(songs_dir, transition_type="crossfade"):
     # Load stems for current song
@@ -162,20 +159,10 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_tease":
-        bpm1, bpm2 = match_bpm(songs_dir + "/current_song" + "/vocals.wav", songs_dir + "/transition_song" + "/vocals.wav")
-        stretch_ratio = bpm2 / bpm1
+        match_bpm(songs_dir + "/current_song/vocals.wav", songs_dir + "/transition_song/vocals.wav") 
 
-        y_vocals_b, sr = librosa.load(songs_dir + "/transition_song" + "/vocals.wav", sr=None)
-        y_stretched = librosa.effects.time_stretch(y_vocals_b, rate=stretch_ratio)
-
-        # Convert back to AudioSegment
-        y16 = (y_stretched * 32767).astype(np.int16)
-        vocals_b_matched = AudioSegment(
-            y16.tobytes(),
-            frame_rate=sr,
-            sample_width=2,
-            channels=1
-        )
+        matched_vocals_path = os.path.join(songs_dir, "transition_song", "_matched.wav")
+        vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # On Beat?
         start_time_ms = transition_start_time
