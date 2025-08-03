@@ -178,6 +178,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
         matched_vocals_path1, ratio1 = match_bpm(songs_dir + "/current_song/chorus.mp3", songs_dir + "/transition_song/vocals.wav")
         matched_vocals_path2, ratio2 = match_bpm(songs_dir + "/transition_song/vocals.wav", songs_dir + "/current_song/chorus.mp3")
 
+        tease_duration_ms = 10000
+
         if ratio1 >= 1:
             vocals_b_matched = AudioSegment.from_file(matched_vocals_path1)
             
@@ -208,8 +210,6 @@ def create_transition(songs_dir, transition_type="crossfade"):
             part3 = part3.overlay(
                 instrumental_transition[vocals_transition_in + tease_duration_ms :].fade_in(2000)
             )
-
-        tease_duration_ms = 10000
 
         # PART 1: Song A
         part1 = song_current[:vocals_current_down]
