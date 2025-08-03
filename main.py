@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
@@ -61,13 +61,20 @@ def _search_and_transition(query: str):
         output_path = os.path.join(uuid_folder, "dj_transition.mp3")
         shutil.move(final_mp3, output_path)
 
+    response = JSONResponse(content={
+        "folder": folder_uuid,
+        "current-song": urllib.parse.quote(current_song_name),
+        "transition-song": urllib.parse.quote(transition_song_name)
+    })
+    
+    return response
+
+@app.get('/api/get_song')
+def get_song(song_uuid: str):
     response = FileResponse(
-        path=output_path,
+        path=f'temp/{uuid}/dj_transition.mp3',
         media_type="audio/mpeg",
         filename="dj_transition.mp3"
     )
-
-    response.headers['X-Current-Song'] = urllib.parse.quote(current_song_name)
-    response.headers['X-Transition-Song'] = urllib.parse.quote(transition_song_name)
 
     return response
