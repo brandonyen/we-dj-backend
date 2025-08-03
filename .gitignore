@@ -203,6 +203,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 temp/
-cookies.b64
+cookies.txt
 songs/
 song_metadata.csv
