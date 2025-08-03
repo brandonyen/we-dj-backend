@@ -54,20 +54,8 @@ def _search_and_transition(query: str):
             f.write(response)
         
 
-        # Transition Type Random Selection
-        def choose_weighted_transition(prob_dict):
-            transitions = list(prob_dict.keys())
-            weights = list(prob_dict.values())
-            chosen_transition = random.choices(transitions, weights=weights, k=1)[0]
-            return chosen_transition
-        
-        transitions_prob_dict = {
-            'crossfade': 0.6,
-            'scratch': 0.25,
-            'crazy_scratch': 0.1,
-            'steve': 0.05
-        }
-        transition_songs(temp_dir, choose_weighted_transition(transitions_prob_dict))
+        # Transition Type Selection
+        transition_songs(temp_dir, 'crossfade')
 
         final_mp3 = os.path.join(temp_dir, "dj_transition.mp3")
 
