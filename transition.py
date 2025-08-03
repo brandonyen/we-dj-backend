@@ -161,6 +161,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_crossover":
+        print("instrumental_current length (ms):", len(instrumental_current))
+        print("Requested slice ends at (ms):", transition_start_other + 12000)
         matched_vocals_path = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
@@ -176,7 +178,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         b_vocals_tease = vocals_b_matched[:tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
-        # PART 3: Back to Song A
+        # PART 3: Song B continued
         part3 = song_transition[tease_duration_ms:]
 
         final_transition = part1 + part2 + part3
