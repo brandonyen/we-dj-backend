@@ -54,8 +54,8 @@ def get_beat_times(audio_segment):
     return beat_times
 
 def match_bpm(songs_dir, sound_to_match):
-    source_audio, sr = librosa.load(songs_dir + "/current_song/song.mp3", sr=None)
-    target_audio, _ = librosa.load(songs_dir + "/transition_song/song.mp3", sr=sr)
+    source_audio, sr = librosa.load(songs_dir + "/current_song/chorus.mp3", sr=None)
+    target_audio, _ = librosa.load(songs_dir + "/transition_song/chorus.mp3", sr=sr)
 
     source_bpm = librosa.feature.tempo(y=source_audio, sr=sr)[0]
     target_bpm = librosa.feature.tempo(y=target_audio, sr=sr)[0]
