@@ -8,7 +8,7 @@ import torch
 import torchaudio
 import soundfile as sf
 
-def extract_chorus(input_file, output_path, duration=15):
+def extract_chorus(input_file, output_path, duration=30):
     audio = AudioSegment.from_mp3(input_file)
     samples = np.array(audio.get_array_of_samples()).astype(np.float32)
 
@@ -161,8 +161,6 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_crossover":
-        print("instrumental_current length (ms):", len(instrumental_current))
-        print("Requested slice ends at (ms):", transition_start_other + 12000)
         matched_vocals_path, ratio = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
@@ -175,7 +173,6 @@ def create_transition(songs_dir, transition_type="crossfade"):
 
         # PART 2: Song A instrumental + Song B vocals
         a_instr_tease = instrumental_current[start_time_ms:start_time_ms + tease_duration_ms]
-        print("instrument tease duration:" + str(len(a_instr_tease)))
         b_vocals_tease = vocals_b_matched[:tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
