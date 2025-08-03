@@ -92,10 +92,12 @@ def _search_and_transition(query: str):
 
 @app.get('/api/get_song')
 def get_song(song_uuid: str):
-    response = FileResponse(
+    return FileResponse(
         path=f'temp/{uuid}/dj_transition.mp3',
         media_type="audio/mpeg",
         filename="dj_transition.mp3"
     )
 
-    return response
+@app.get('/api/get_thumbnail')
+def get_thumbnail(song_uuid: str, thumbnail_type: str):
+    return FileResponse(f'temp/{uuid}/{thumbnail_type}.jpg', media_type="image/jpeg")
