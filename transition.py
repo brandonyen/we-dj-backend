@@ -68,7 +68,7 @@ def match_bpm(songs_dir, sound_to_match):
     stem_path = os.path.splitext(sound_to_match)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
 
-    return stem_path
+    return stem_path, stretch_ratio
 
 def create_transition(songs_dir, transition_type="crossfade"):
     # Load stems for current song
@@ -163,7 +163,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     elif transition_type == "vocals_crossover":
         print("instrumental_current length (ms):", len(instrumental_current))
         print("Requested slice ends at (ms):", transition_start_other + 12000)
-        matched_vocals_path = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
+        matched_vocals_path, ratio = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # On Beat?
@@ -175,11 +175,12 @@ def create_transition(songs_dir, transition_type="crossfade"):
 
         # PART 2: Song A instrumental + Song B vocals
         a_instr_tease = instrumental_current[start_time_ms:start_time_ms + tease_duration_ms]
+        print("instrument tease duration:" + str(len(a_instr_tease)))
         b_vocals_tease = vocals_b_matched[:tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
         # PART 3: Song B continued
-        part3 = song_transition[tease_duration_ms:]
+        part3 = song_transition[tease_duration_ms * ratio:]
 
         final_transition = part1 + part2 + part3
         output_file = songs_dir + "/dj_transition.mp3"
