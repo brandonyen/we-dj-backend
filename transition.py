@@ -7,6 +7,12 @@ from demucs.apply import apply_model
 import torch
 import torchaudio
 import soundfile as sf
+import essentia
+import essentia.standard as es
+import numpy as np
+import os
+import soundfile as sf
+import pyrubberband as pyrb
 
 def extract_chorus(input_file, output_path, duration=30):
     audio = AudioSegment.from_mp3(input_file)
@@ -53,37 +59,40 @@ def get_beat_times(audio_segment):
     beat_times = librosa.frames_to_time(beats, sr=sr)
     return beat_times
 
-def match_bpm(source, target):
-    source_audio, sr = librosa.load(source, sr=None)
-    target_audio, _ = librosa.load(target, sr=sr)
+def get_bpm_essentia(audio, sr):
+    rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
+    bpm, _, _, _, _ = rhythm_extractor(audio)
+    return bpm
 
-    # Improve tempo estimation accuracy with beat tracking
-    source_tempo, _ = librosa.beat.beat_track(y=source_audio, sr=sr, units='time')
-    target_tempo, _ = librosa.beat.beat_track(y=target_audio, sr=sr, units='time')
+def match_bpm(source_path, target_path):
+    # Load both source and target audio
+    loader = es.MonoLoader(filename=source_path)
+    source_audio = loader()
+    
+    loader.filename = target_path
+    target_audio = loader()
 
-    # Alternatively use tempogram + autocorrelation for robust BPM
-    def get_bpm(y, sr):
-        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
-        tempogram = librosa.feature.tempogram(onset_envelope=onset_env, sr=sr)
-        ac = librosa.autocorrelate(onset_env, max_size=tempogram.shape[1])
-        tempo_est = librosa.beat.tempo(onset_envelope=onset_env, sr=sr, aggregate=None)
-        return np.median(tempo_est)
+    sr = 44100  # MonoLoader defaults to 44.1kHz unless you override
 
-    source_bpm = get_bpm(source_audio, sr)
-    target_bpm = get_bpm(target_audio, sr)
+    source_bpm = get_bpm_essentia(source_audio, sr)
+    target_bpm = get_bpm_essentia(target_audio, sr)
 
     stretch_ratio = source_bpm / target_bpm
 
-    # Stretch and normalize
-    y, stem_sr = librosa.load(target, sr=None)
-    y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
-    y_stretched = librosa.util.normalize(y_stretched)
+    # Load again using sf to preserve stereo for output
+    y, stem_sr = sf.read(target_path)
+    
+    # Time-stretch using Rubberband (preserves pitch)
+    y_stretched = pyrb.time_stretch(y, stem_sr, stretch_ratio)
 
-    stem_path = os.path.splitext(target)[0] + "_matched.wav"
+    # Normalize
+    y_stretched = y_stretched / np.max(np.abs(y_stretched))
+
+    stem_path = os.path.splitext(target_path)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
 
-    print(f"CURRENT BPM: {source_bpm}\n\n")
-    print(f"TRANSITION BPM: {target_bpm}\n\n")
+    print(f"CURRENT BPM: {source_bpm:.2f}\n")
+    print(f"TRANSITION BPM: {target_bpm:.2f}\n")
 
     return stem_path, stretch_ratio
 
