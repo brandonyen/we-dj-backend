@@ -49,15 +49,14 @@ def split_audio(input_file, output_dir):
 def build_instrumental(bass, drums, other):
     return bass.overlay(drums).overlay(other)
 
-def get_beat_times(audio_segment):
-    samples = np.array(audio_segment.get_array_of_samples()).astype(np.float32)
-    if audio_segment.channels == 2:
-        samples = samples.reshape((-1, 2)).mean(axis=1)
-    y = samples / np.max(np.abs(samples))  # normalize
-    sr = audio_segment.frame_rate
-    tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
-    beat_times = librosa.frames_to_time(beats, sr=sr)
-    return beat_times
+def get_beat_times_essentia(audio_path):
+    loader = es.MonoLoader(filename=audio_path)
+    audio = loader()
+
+    rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
+    bpm, beats, _, _, _ = rhythm_extractor(audio)
+
+    return beats
 
 def get_bpm_essentia(audio, sr):
     rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
@@ -119,24 +118,25 @@ def create_transition(songs_dir, transition_type="crossfade"):
     song_current = instrumental_current.overlay(vocals_current)
     song_transition = instrumental_transition.overlay(vocals_transition)
 
-    # Get beat times
-    beats_current = get_beat_times(song_current)
-    beats_transition = get_beat_times(song_transition)
+    beats_current = get_beat_times_essentia(song_current)
+    beats_transition = get_beat_times_essentia(song_transition)
     crossfade_beats = 4
 
     # Desired minimum time before transition in seconds
     min_time_before_transition = 8
 
     # Find the beat index closest to min_time_before_transition
-    start_beat_idx = 0
-    for i, beat_time in enumerate(beats_current):
-        if beat_time >= min_time_before_transition:
-            start_beat_idx = i
-            break
+    start_beat_idx = next((i for i, t in enumerate(beats_current) if t >= min_time_before_transition), 0)
 
     fade_start_time_current = beats_current[start_beat_idx]
     fade_end_time_current = beats_current[start_beat_idx + crossfade_beats]
-    fade_start_time_transition = beats_transition[8]
+    fade_start_time_transition = beats_transition[8]  # you can also randomize or select more meaningfully
+
+    # Convert to milliseconds
+    vocals_current_down = int(fade_start_time_current * 1000)
+    vocals_transition_in = int(fade_end_time_current * 1000)
+    transition_start_time = int(fade_start_time_transition * 1000)
+    transition_start_other = vocals_current_down
 
     # Convert to milliseconds
     vocals_current_down = int(fade_start_time_current * 1000)
