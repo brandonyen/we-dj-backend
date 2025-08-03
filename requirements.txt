@@ -88,7 +88,6 @@ starlette==0.47.2
 storage3==0.12.0
 StrEnum==0.4.15
 submitit==1.5.3
-supabase==2.17.0
 supafunc==0.10.1
 sympy==1.14.0
 threadpoolctl==3.6.0
