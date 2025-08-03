@@ -43,6 +43,16 @@ def split_audio(input_file, output_dir):
 def build_instrumental(bass, drums, other):
     return bass.overlay(drums).overlay(other)
 
+def get_beat_times(audio_segment):
+    samples = np.array(audio_segment.get_array_of_samples()).astype(np.float32)
+    if audio_segment.channels == 2:
+        samples = samples.reshape((-1, 2)).mean(axis=1)
+    y = samples / np.max(np.abs(samples))  # normalize
+    sr = audio_segment.frame_rate
+    tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+    beat_times = librosa.frames_to_time(beats, sr=sr)
+    return beat_times
+
 def match_bpm(current_song, transition_song):
     source_audio, sr = librosa.load(os.path.join(current_song, "song.mp3"), sr=None)
     target_audio, _ = librosa.load(os.path.join(transition_song, "song.mp3"), sr=sr)
@@ -83,26 +93,39 @@ def create_transition(songs_dir, transition_type="crossfade"):
     song_current = instrumental_current.overlay(vocals_current)
     song_transition = instrumental_transition.overlay(vocals_transition)
 
-    if transition_type == "crossfade":
-        vocals_current_down = 10000
-        vocals_transition_in = 15000
-        crossfade_duration = 5000
+    # Get beat times
+    beats_current = get_beat_times(song_current)
+    beats_transition = get_beat_times(song_transition)
+    crossfade_beats = 4
+    start_beat_idx = 16
+    fade_start_time_current = beats_current[start_beat_idx]
+    fade_end_time_current = beats_current[start_beat_idx + crossfade_beats]
+    fade_start_time_transition = beats_transition[8]
 
-        # Part 1: start of current song
+    # Convert to milliseconds
+    vocals_current_down = int(fade_start_time_current * 1000)
+    vocals_transition_in = int(fade_end_time_current * 1000)
+    transition_start_time = int(fade_start_time_transition * 1000)
+
+    if transition_type == "crossfade":
+        crossfade_duration = vocals_transition_in - vocals_current_down 
+
+        # Part 1: Intro from current song
         full_current = song_current[:vocals_current_down]
 
-        # Part 2: current fades out, transition instruments fade in
+        # Part 2: Crossfade section
         current_fade_out = instrumental_current[vocals_current_down:vocals_transition_in].fade_out(crossfade_duration)
-        current_fade_out = current_fade_out.overlay(vocals_current[vocals_current_down:vocals_transition_in].fade_out(3000))
-        current_fade_out = current_fade_out.overlay(instrumental_transition[0:].fade_in(crossfade_duration))
+        current_fade_out = current_fade_out.overlay(vocals_current[vocals_current_down:vocals_transition_in].fade_out(int(crossfade_duration * 0.6)))
+        current_fade_out = current_fade_out.overlay(instrumental_transition[transition_start_time:transition_start_time+crossfade_duration].fade_in(crossfade_duration))
 
-        # Part 3: vocals from transition fade in
-        transition_vocals_fade_in = vocals_transition[5000:10000].fade_in(crossfade_duration)
-        transition_vocals_fade_in = transition_vocals_fade_in.overlay(instrumental_transition[5000:])
+        # Part 3: Bring in vocals from transition
+        transition_vocals_fade_in = vocals_transition[transition_start_time+crossfade_duration:transition_start_time+2*crossfade_duration].fade_in(crossfade_duration)
+        transition_vocals_fade_in = transition_vocals_fade_in.overlay(instrumental_transition[transition_start_time+crossfade_duration:])
 
-        # Part 4: rest of transition song
-        transition_remainder = vocals_transition[10000:].overlay(instrumental_transition[10000:])
+        # Part 4: Remainder of transition
+        transition_remainder = vocals_transition[transition_start_time+2*crossfade_duration:].overlay(instrumental_transition[transition_start_time+2*crossfade_duration:])
 
+        # Final song
         final_transition = full_current + current_fade_out + transition_vocals_fade_in + transition_remainder
         output_file = songs_dir + "/dj_transition.mp3"
 
