@@ -97,7 +97,17 @@ def create_transition(songs_dir, transition_type="crossfade"):
     beats_current = get_beat_times(song_current)
     beats_transition = get_beat_times(song_transition)
     crossfade_beats = 4
-    start_beat_idx = 16
+
+    # Desired minimum time before transition in seconds (e.g., 12 seconds)
+    min_time_before_transition = 12
+
+    # Find the beat index closest to min_time_before_transition
+    start_beat_idx = 0
+    for i, beat_time in enumerate(beats_current):
+        if beat_time >= min_time_before_transition:
+            start_beat_idx = i
+            break
+
     fade_start_time_current = beats_current[start_beat_idx]
     fade_end_time_current = beats_current[start_beat_idx + crossfade_beats]
     fade_start_time_transition = beats_transition[8]
