@@ -100,6 +100,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
     # Build instrumentals
     instrumental_current = build_instrumental(bass_current, drums_current, other_current)
     instrumental_transition = build_instrumental(bass_transition, drums_transition, other_transition)
+    instrumental_current.export(songs_dir + "/current_song/instrumentals.wav", format="wav")
+    instrumental_transition.export(songs_dir + "/transition_song/instrumentals.wav", format="wav")
 
     # Combine vocals with instrumentals
     song_current = instrumental_current.overlay(vocals_current)
@@ -175,13 +177,13 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_crossover":
-        matched_vocals_path1, ratio1 = match_bpm(songs_dir + "/current_song/chorus.mp3", songs_dir + "/transition_song/vocals.wav")
-        matched_vocals_path2, ratio2 = match_bpm(songs_dir + "/transition_song/vocals.wav", songs_dir + "/current_song/chorus.mp3")
+        matched_vocals_path, ratio1 = match_bpm(songs_dir + "/current_song/chorus.mp3", songs_dir + "/transition_song/vocals.wav")
+        matched_instrumentals_path, ratio2 = match_bpm(songs_dir + "/transition_song/chorus.mp3", songs_dir + "/current_song/instrumentals.wav")
 
         tease_duration_ms = 10000
 
         if ratio1 >= 1:
-            vocals_b_matched = AudioSegment.from_file(matched_vocals_path1)
+            vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
             
             # PART 2: Song A instrumental + Song B vocals
             a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(2000)
@@ -192,7 +194,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
             part3 = vocals_transition[(vocals_transition_in+tease_duration_ms) * ratio1:]
             part3 = part3.overlay(instrumental_transition[(vocals_transition_in+tease_duration_ms) * ratio1:].fade_in(2000))
         else:
-            instrumentals_a_matched = AudioSegment.from_file(matched_vocals_path2)
+            instrumentals_a_matched = AudioSegment.from_file(matched_instrumentals_path)
             
             # PART 2: Song A instrumental + Song B vocals
             a_instr_tease = instrumentals_a_matched[vocals_current_down * ratio2:(vocals_current_down + tease_duration_ms) * ratio2].fade_out(2000)
