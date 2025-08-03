@@ -8,7 +8,6 @@ from connector import search_download, transition_songs
 import tempfile
 import uuid
 import asyncio
-import random
 import shutil
 import urllib.parse
 from mutagen.mp3 import MP3
