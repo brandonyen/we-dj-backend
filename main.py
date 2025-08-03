@@ -16,7 +16,10 @@ load_dotenv()
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
-cookie_path = base64.b64decode('cookies.b64')
+with open('cookies.b64', 'rb') as f:
+    encoded_data = f.read()
+
+decoded_data = base64.b64decode(encoded_data)
 
 app.add_middleware(
     CORSMiddleware,
