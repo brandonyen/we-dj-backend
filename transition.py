@@ -151,33 +151,38 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = full_current + scratch_loop + song_transition
         output_file = songs_dir + "/dj_transition.mp3"
     
-    elif transition_type == "steve":
+    elif transition_type == "vocals_tease":
         bpm1, bpm2 = match_bpm(songs_dir + "/current_song" + "/vocals.wav", songs_dir + "/transition_song" + "/vocals.wav")
-        scratch = AudioSegment.from_file('transitions' + "/scratch.wav")[:60000 / (bpm1*2)]
-        vocals_a_matched = AudioSegment.from_file(songs_dir + "/current_song" + "/vocals.wav")
-        silence = AudioSegment.silent(duration=60000 / (bpm2 * 2))
+        stretch_ratio = bpm2 / bpm1
 
-        instrument_fade = 8500
-        scratch_sound = 15000
-        instrument_new = 15500
-        full_new = 22000
+        y_vocals_b, sr = librosa.load(songs_dir + "/transition_song" + "/vocals.wav", sr=None)
+        y_stretched = librosa.effects.time_stretch(y_vocals_b, rate=stretch_ratio)
 
-        full_current = song_current[:instrument_fade]
+        # Convert back to AudioSegment
+        y16 = (y_stretched * 32767).astype(np.int16)
+        vocals_b_matched = AudioSegment(
+            y16.tobytes(),
+            frame_rate=sr,
+            sample_width=2,
+            channels=1
+        )
 
-        a_instrument_fade = vocals_current[instrument_fade:scratch_sound]
-        a_instrument_fade = a_instrument_fade.overlay(instrumental_current[instrument_fade:scratch_sound].apply_gain(-120))
+        # On Beat?
+        start_time_ms = transition_start_time
+        tease_duration_ms = 30_000
 
-        scratch_time = vocals_current[scratch_sound:instrument_new]
-        scratch_loop = scratch + scratch
-        scratch_time = scratch_time.overlay(scratch_loop)
+        # PART 1: Song A
+        part1 = song_current[:start_time_ms]
 
-        b_fade = instrumental_transition[:full_new - instrument_new]
-        b_fade = b_fade.overlay(vocals_a_matched[instrument_new * (bpm2 / bpm1):full_new * (bpm2 / bpm1)].fade_out(full_new-instrument_new))
+        # PART 2: Song A instrumental + Song B vocals
+        a_instr_tease = instrumental_current[start_time_ms:start_time_ms + tease_duration_ms]
+        b_vocals_tease = vocals_b_matched[:tease_duration_ms].fade_in(2000).fade_out(2000)
+        part2 = a_instr_tease.overlay(b_vocals_tease)
 
-        b_instrumental = instrumental_transition[full_new - instrument_new:]
-        full_b = b_instrumental.overlay(vocals_transition[full_new - instrument_new:].fade_in(3000))
+        # PART 3: Back to Song A
+        part3 = song_current[start_time_ms + tease_duration_ms:]
 
-        final_transition = full_current + a_instrument_fade + scratch_loop + silence + b_fade + full_b
+        final_transition = part1 + part2 + part3
         output_file = songs_dir + "/dj_transition.mp3"
     
     else:
