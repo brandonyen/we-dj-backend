@@ -199,19 +199,31 @@ def create_transition(songs_dir, transition_type="crossfade"):
         tease_duration_ms = 12000
 
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
+        crossfade_duration = 2000
 
         # PART 1: Song A
-        part1 = vocals_current[:vocals_current_down].fade_out(1000)
-        part1 = part1.overlay(instrumental_current[:vocals_current_down])
-            
+        part1 = vocals_current[:vocals_current_down-crossfade_duration]
+        part1 = part1.overlay(instrumental_current[:vocals_current_down-crossfade_duration])
+
+        # PART 1.5: Vocals Switch
+        part1_5 = vocals_current[vocals_current_down-crossfade_duration:vocals_current_down].fade_out(crossfade_duration)
+        part1_5 = part1_5.overlay(instrumental_current[vocals_current_down-crossfade_duration:vocals_current_down])
+        part1_5 = part1_5.overlay(vocals_b_matched[vocals_transition_in-crossfade_duration:vocals_transition_in].fade_in(crossfade_duration))
+        
         # PART 2: Song A instrumental + Song B vocals
-        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(1000)
-        b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in + tease_duration_ms].fade_in(2000)
+        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms - crossfade_duration]
+        b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in + tease_duration_ms - crossfade_duration]
         part2 = a_instr_tease.overlay(b_vocals_tease)
+
+        # PART 3.5: Instrumental Switch
+        a_instr_tease = instrumental_current[vocals_current_down + tease_duration_ms - crossfade_duration:vocals_current_down + tease_duration_ms].fade_out(crossfade_duration)
+        b_vocals_tease = vocals_b_matched[vocals_transition_in + tease_duration_ms - crossfade_duration:vocals_transition_in + tease_duration_ms]
+        part2 = a_instr_tease.overlay(b_vocals_tease)
+        part2 = part2.overlay(vocals_transition[(vocals_transition_in+tease_duration_ms-crossfade_duration) * ratio1:].fade_in(crossfade_duration))
 
         # PART 3: Song B continued
         part3 = vocals_transition[(vocals_transition_in+tease_duration_ms) * ratio1:]
-        part3 = part3.overlay(instrumental_transition[(vocals_transition_in+tease_duration_ms) * ratio1:].fade_in(2000))
+        part3 = part3.overlay(instrumental_transition[(vocals_transition_in+tease_duration_ms) * ratio1:])
 
         final_transition = part1 + part2 + part3
         output_file = songs_dir + "/dj_transition.mp3"
