@@ -15,11 +15,6 @@ def transition_score(source, target):
     energy_diff = abs(source['energy'] - target['energy'])
     return camelot_penalty * 10 + bpm_diff * 5 + loudness_diff * 10 + energy_diff * 200
 
-def is_too_similar(song1, song2, bpm_thresh=0.5):
-    same_key = song1['camelot_key'] == song2['camelot_key']
-    bpm_close = abs(song1['bpm'] - song2['bpm']) < bpm_thresh
-    return same_key and bpm_close
-
 def find_best_transition(current_song_data, csv_path):
     df = pd.read_csv(csv_path)
 
@@ -30,8 +25,6 @@ def find_best_transition(current_song_data, csv_path):
     candidates['energy'] = pd.to_numeric(candidates['energy'], errors='coerce')
     candidates = candidates.dropna(subset=['bpm', 'loudness', 'camelot_key'])
 
-    candidates = candidates[~candidates.apply(lambda row: is_too_similar(current_song_data, row), axis=1)]
-
     if candidates.empty:
         candidates = df.copy()
         candidates['bpm'] = pd.to_numeric(candidates['bpm'], errors='coerce')
@@ -39,6 +32,7 @@ def find_best_transition(current_song_data, csv_path):
         candidates = candidates.dropna(subset=['bpm', 'loudness', 'camelot_key'])
 
     candidates['score'] = candidates.apply(lambda row: transition_score(current_song_data, row), axis=1)
+    candidates = candidates[candidates['score'] >= 0.01]
     best_match = candidates.sort_values(by='score').iloc[0]
 
     print(candidates.sort_values(by='score'))
