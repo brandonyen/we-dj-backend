@@ -196,7 +196,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     
     elif transition_type == "vocals_crossover":
         matched_vocals_path, ratio1 = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
-        tease_duration_ms = 10000
+        tease_duration_ms = 12000
 
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
