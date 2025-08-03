@@ -11,6 +11,8 @@ import asyncio
 import random
 import shutil
 import urllib.parse
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, APIC
 
 app = FastAPI()
 load_dotenv()
@@ -35,6 +37,22 @@ def root():
 async def search_song(query: str):
     return await asyncio.to_thread(_search_and_transition, query)
 
+def extract_thumbnail(mp3_path, output_image_path):
+    audio = MP3(mp3_path, ID3=ID3)
+
+    if audio.tags is None:
+        print("No ID3 tags found.")
+        return
+
+    for tag in audio.tags.values():
+        if isinstance(tag, APIC):
+            with open(output_image_path, 'wb') as img:
+                img.write(tag.data)
+            print(f"Thumbnail saved to {output_image_path}")
+            return
+    
+    print("No embedded thumbnail found.")
+
 def _search_and_transition(query: str):
     with tempfile.TemporaryDirectory(prefix="transition_") as temp_dir:
         current_dir = os.path.join(temp_dir, "current_song")
@@ -56,6 +74,9 @@ def _search_and_transition(query: str):
         folder_uuid = str(uuid.uuid4())
         uuid_folder = os.path.join("temp", folder_uuid)
         os.makedirs(uuid_folder, exist_ok=True)
+
+        extract_thumbnail(current_dir + "/song.mp3", os.path.join(uuid_folder, "current.jpg"))
+        extract_thumbnail(transition_dir + "/song.mp3", os.path.join(uuid_folder, "transition.jpg"))
 
         final_mp3 = os.path.join(temp_dir, "dj_transition.mp3")
         output_path = os.path.join(uuid_folder, "dj_transition.mp3")

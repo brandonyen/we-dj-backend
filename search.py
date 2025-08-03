@@ -23,11 +23,22 @@ def search_and_download_youtube_song(query, output_dir, cookie_path):
         'cookiefile': cookie_path,
         'format': 'bestaudio/best',
         'outtmpl': f'{output_dir}/song.%(ext)s',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '128',
-        }],
+        'writethumbnail': True,
+        'postprocessors': [
+            {
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            },
+            {
+                'key': 'FFmpegThumbnailsConvertor',
+                'format': 'jpg',
+            },
+            {
+                'key': 'EmbedThumbnail',
+            },
+        ],
+        'prefer_ffmpeg': True,
         'quiet': False,
     }
 
