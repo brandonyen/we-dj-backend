@@ -48,22 +48,12 @@ def _search_and_transition(query: str):
 
         transition_song = os.path.join('songs', transition_song_name)
         transition_path = os.path.join(transition_dir, "song.mp3")
-        shutil.copyfile(transition_song, transition_path)
+        with open(transition_path, "wb") as f:
+            f.write(response)
         
-        # Transition Type Random Selection
-        def choose_weighted_transition(prob_dict):
-            transitions = list(prob_dict.keys())
-            weights = list(prob_dict.values())
-            chosen_transition = random.choices(transitions, weights=weights, k=1)[0]
-            return chosen_transition
-        
-        transitions_prob_dict = {
-            'crossfade': 0.6,
-            'scratch': 0.25,
-            'crazy_scratch': 0.1,
-            'steve': 0.05
-        }
-        transition_songs(temp_dir, choose_weighted_transition(transitions_prob_dict))
+
+        # Transition Type Selection
+        transition_songs(temp_dir, 'crossfade')
 
         folder_uuid = str(uuid.uuid4())
         uuid_folder = os.path.join("temp", folder_uuid)
