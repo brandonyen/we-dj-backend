@@ -188,7 +188,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
             
         # PART 2: Song A instrumental + Song B vocals
         a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(2000)
-        b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in+tease_duration_ms].fade_in(2000)
+        b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in + tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
         # PART 3: Song B continued
