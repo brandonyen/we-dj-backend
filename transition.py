@@ -63,12 +63,12 @@ def get_bpm_essentia(audio, sr):
     bpm, _, _, _, _ = rhythm_extractor(audio)
     return bpm
 
-def match_bpm(source_path, target_path):
+def match_bpm(songs_dir, target_path):
     # Load both source and target audio
-    loader = es.MonoLoader(filename=source_path)
+    loader = es.MonoLoader(filename=songs_dir + "/current_song/song.mp3")
     source_audio = loader()
     
-    loader.filename = target_path
+    loader.filename = songs_dir + "/transition_song/song.mp3"
     target_audio = loader()
 
     sr = 44100  # MonoLoader defaults to 44.1kHz unless you override
@@ -189,7 +189,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_crossover":
-        matched_vocals_path, ratio1 = match_bpm(songs_dir + "/current_song/chorus.mp3", songs_dir + "/transition_song/vocals.wav")
+        matched_vocals_path, ratio1 = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         tease_duration_ms = 10000
 
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
