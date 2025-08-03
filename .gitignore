@@ -204,3 +204,5 @@ __marimo__/
 
 /temp
 cookies.b64
+/songs
+song_metadata.csv
