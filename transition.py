@@ -171,12 +171,13 @@ def create_transition(songs_dir, transition_type="crossfade"):
         part1 = song_current[:vocals_current_down]
 
         # PART 2: Song A instrumental + Song B vocals
-        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms]
+        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(2000)
         b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in+tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
         # PART 3: Song B continued
-        part3 = song_transition[(vocals_transition_in+tease_duration_ms) * ratio:]
+        part3 = vocals_transition[(vocals_transition_in+tease_duration_ms) * ratio:]
+        part3 = part3.overlay(instrumental_transition[(vocals_transition_in+tease_duration_ms) * ratio:].fade_in(2000))
 
         final_transition = part1 + part2 + part3
         output_file = songs_dir + "/dj_transition.mp3"
