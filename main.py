@@ -4,28 +4,23 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
-from supabase import create_client, Client
 from connector import search_download, transition_songs
 import tempfile
 import base64
 import asyncio
 import random
+import shutil
 
 app = FastAPI()
 load_dotenv()
 
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
-cookie_b64 = supabase.storage.from_('transition-songs').download('cookies.b64')
-cookie_path = "/tmp/youtube_cookies.txt"
-with open(cookie_path, "wb") as f:
-    f.write(base64.b64decode(cookie_b64))
+cookie_path = 'cookies.txt'
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://we-dj-proxy-production.up.railway.app"],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,8 +42,10 @@ def _search_and_transition(query: str):
         os.makedirs(transition_dir, exist_ok=True)
 
         current_song_name, transition_song_name = search_download(query, temp_dir, cookie_path)
+        transition_song_name = f"{transition_song_name}.mp3"
+        current_song_name = f"{current_song_name}.mp3"
 
-        response = supabase.storage.from_('transition-songs').download(transition_song_name)
+        transition_song = os.path.join('songs', transition_song_name)
         transition_path = os.path.join(transition_dir, "song.mp3")
         with open(transition_path, "wb") as f:
             f.write(response)
@@ -63,8 +60,13 @@ def _search_and_transition(query: str):
         final_temp_path.close()
         os.rename(final_mp3, final_temp_path.name)
 
-    return FileResponse(
+    response = FileResponse(
         path=final_temp_path.name,
         media_type="audio/mpeg",
         filename="dj_transition.mp3"
     )
+        
+    response.headers['X-Current-Song'] = current_song_name
+    response.headers['X-Transition-Song'] = transition_song_name
+
+    return response
