@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
@@ -8,9 +8,10 @@ from connector import search_download, transition_songs
 import tempfile
 import uuid
 import asyncio
-import random
 import shutil
 import urllib.parse
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, APIC
 
 app = FastAPI()
 load_dotenv()
@@ -35,6 +36,22 @@ def root():
 async def search_song(query: str):
     return await asyncio.to_thread(_search_and_transition, query)
 
+def extract_thumbnail(mp3_path, output_image_path):
+    audio = MP3(mp3_path, ID3=ID3)
+
+    if audio.tags is None:
+        print("No ID3 tags found.")
+        return
+
+    for tag in audio.tags.values():
+        if isinstance(tag, APIC):
+            with open(output_image_path, 'wb') as img:
+                img.write(tag.data)
+            print(f"Thumbnail saved to {output_image_path}")
+            return
+    
+    print("No embedded thumbnail found.")
+
 def _search_and_transition(query: str):
     with tempfile.TemporaryDirectory(prefix="transition_") as temp_dir:
         current_dir = os.path.join(temp_dir, "current_song")
@@ -57,17 +74,29 @@ def _search_and_transition(query: str):
         uuid_folder = os.path.join("temp", folder_uuid)
         os.makedirs(uuid_folder, exist_ok=True)
 
+        extract_thumbnail(current_dir + "/song.mp3", os.path.join(uuid_folder, "current.jpg"))
+        extract_thumbnail(transition_dir + "/song.mp3", os.path.join(uuid_folder, "transition.jpg"))
+
         final_mp3 = os.path.join(temp_dir, "dj_transition.mp3")
         output_path = os.path.join(uuid_folder, "dj_transition.mp3")
         shutil.move(final_mp3, output_path)
 
-    response = FileResponse(
-        path=output_path,
+    response = JSONResponse(content={
+        "folder": folder_uuid,
+        "current-song": urllib.parse.quote(current_song_name),
+        "transition-song": urllib.parse.quote(transition_song_name)
+    })
+    
+    return response
+
+@app.get('/api/get_song')
+def get_song(song_uuid: str):
+    return FileResponse(
+        path=f'temp/{song_uuid}/dj_transition.mp3',
         media_type="audio/mpeg",
         filename="dj_transition.mp3"
     )
 
-    response.headers['X-Current-Song'] = urllib.parse.quote(current_song_name)
-    response.headers['X-Transition-Song'] = urllib.parse.quote(transition_song_name)
-
-    return response
+@app.get('/api/get_thumbnail')
+def get_thumbnail(song_uuid: str, thumbnail_type: str):
+    return FileResponse(f'temp/{song_uuid}/{thumbnail_type}.jpg', media_type="image/jpeg")
