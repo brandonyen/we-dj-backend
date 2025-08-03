@@ -114,6 +114,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     vocals_current_down = int(fade_start_time_current * 1000)
     vocals_transition_in = int(fade_end_time_current * 1000)
     transition_start_time = int(fade_start_time_transition * 1000)
+    transition_start_other = vocals_current_down
 
     if transition_type == "crossfade":
         crossfade_duration = vocals_transition_in - vocals_current_down
@@ -138,7 +139,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
     elif transition_type == "scratch":
-        scratch_start = transition_start_time
+        scratch_start = transition_start_other
         full_current = song_current[:scratch_start]
 
         scratch_loop = AudioSegment.from_file('transitions' + "/scratch_loop.wav")[:600]
@@ -147,7 +148,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
     elif transition_type == "crazy_scratch":
-        scratch_start = transition_start_time
+        scratch_start = transition_start_other
 
         # Full song A
         full_current = song_current[:scratch_start]
@@ -165,7 +166,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # On Beat?
-        start_time_ms = transition_start_time
+        start_time_ms = transition_start_other
         tease_duration_ms = 30_000
 
         # PART 1: Song A
