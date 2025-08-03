@@ -54,7 +54,7 @@ def get_beat_times_essentia(audio_path):
     audio = loader()
 
     rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
-    bpm, beats, _, _, _ = rhythm_extractor(audio)
+    _, beats, _, _, _ = rhythm_extractor(audio)
 
     return beats
 
@@ -118,8 +118,14 @@ def create_transition(songs_dir, transition_type="crossfade"):
     song_current = instrumental_current.overlay(vocals_current)
     song_transition = instrumental_transition.overlay(vocals_transition)
 
-    beats_current = get_beat_times_essentia(song_current)
-    beats_transition = get_beat_times_essentia(song_transition)
+    song_current_path = os.path.join(songs_dir, "current_song", "full_mix.wav")
+    song_transition_path = os.path.join(songs_dir, "transition_song", "full_mix.wav")
+
+    song_current.export(song_current_path, format="wav")
+    song_transition.export(song_transition_path, format="wav")
+
+    beats_current = get_beat_times_essentia(song_current_path)
+    beats_transition = get_beat_times_essentia(song_transition_path)
     crossfade_beats = 4
 
     # Desired minimum time before transition in seconds
