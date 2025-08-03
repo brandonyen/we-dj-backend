@@ -82,6 +82,9 @@ def match_bpm(source, target):
     stem_path = os.path.splitext(target)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
 
+    print(f"CURRENT BPM: {source_bpm}\n\n")
+    print(f"TRANSITION BPM: {target_bpm}\n\n")
+
     return stem_path, stretch_ratio
 
 def create_transition(songs_dir, transition_type="crossfade"):
