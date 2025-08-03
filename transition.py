@@ -108,7 +108,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     transition_start_time = int(fade_start_time_transition * 1000)
 
     if transition_type == "crossfade":
-        crossfade_duration = vocals_transition_in - vocals_current_down 
+        crossfade_duration = vocals_transition_in - vocals_current_down
 
         # Part 1: Intro from current song
         full_current = song_current[:vocals_current_down]
@@ -130,7 +130,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
     elif transition_type == "scratch":
-        scratch_start = 15000
+        scratch_start = transition_start_time
         full_current = song_current[:scratch_start]
 
         scratch_loop = AudioSegment.from_file('transitions' + "/scratch_loop.wav")[:600]
@@ -139,7 +139,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
     elif transition_type == "crazy_scratch":
-        scratch_start = 12500
+        scratch_start = transition_start_time
 
         # Full song A
         full_current = song_current[:scratch_start]
