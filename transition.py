@@ -96,8 +96,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
     beats_transition = get_beat_times(song_transition)
     crossfade_beats = 4
 
-    # Desired minimum time before transition in seconds (e.g., 12 seconds)
-    min_time_before_transition = 12
+    # Desired minimum time before transition in seconds
+    min_time_before_transition = 8
 
     # Find the beat index closest to min_time_before_transition
     start_beat_idx = 0
@@ -160,24 +160,24 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = full_current + scratch_loop + song_transition
         output_file = songs_dir + "/dj_transition.mp3"
     
-    elif transition_type == "vocals_tease":
+    elif transition_type == "vocals_crossover":
         matched_vocals_path = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # On Beat?
-        start_time_ms = transition_start_other
-        tease_duration_ms = 30_000
+        start_time_ms = transition_start_other # start at 8+ seconds
+        tease_duration_ms = 12000 # 12 seconds
 
         # PART 1: Song A
         part1 = song_current[:start_time_ms]
 
         # PART 2: Song A instrumental + Song B vocals
         a_instr_tease = instrumental_current[start_time_ms:start_time_ms + tease_duration_ms]
-        b_vocals_tease = vocals_b_matched[:tease_duration_ms].fade_in(2000).fade_out(2000)
+        b_vocals_tease = vocals_b_matched[:tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
         # PART 3: Back to Song A
-        part3 = song_current[start_time_ms + tease_duration_ms:]
+        part3 = song_transition[tease_duration_ms:]
 
         final_transition = part1 + part2 + part3
         output_file = songs_dir + "/dj_transition.mp3"
