@@ -53,19 +53,19 @@ def get_beat_times(audio_segment):
     beat_times = librosa.frames_to_time(beats, sr=sr)
     return beat_times
 
-def match_bpm(songs_dir, sound_to_match):
-    source_audio, sr = librosa.load(songs_dir + "/current_song/chorus.mp3", sr=None)
-    target_audio, _ = librosa.load(songs_dir + "/transition_song/chorus.mp3", sr=sr)
+def match_bpm(source, target):
+    source_audio, sr = librosa.load(source, sr=None)
+    target_audio, _ = librosa.load(target, sr=sr)
 
     source_bpm = librosa.feature.tempo(y=source_audio, sr=sr)[0]
     target_bpm = librosa.feature.tempo(y=target_audio, sr=sr)[0]
     stretch_ratio = source_bpm / target_bpm
 
-    y, stem_sr = librosa.load(sound_to_match, sr=None)
+    y, stem_sr = librosa.load(target, sr=None)
     y_stretched = librosa.effects.time_stretch(y, rate=stretch_ratio)
     y_stretched = librosa.util.normalize(y_stretched)
 
-    stem_path = os.path.splitext(sound_to_match)[0] + "_matched.wav"
+    stem_path = os.path.splitext(target)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
 
     return stem_path, stretch_ratio
@@ -161,23 +161,44 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_crossover":
-        matched_vocals_path, ratio = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
-        vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
+        matched_vocals_path1, ratio1 = match_bpm(songs_dir + "/current_song/chorus.mp3", songs_dir + "/transition_song/vocals.wav")
+        matched_vocals_path2, ratio2 = match_bpm(songs_dir + "/transition_song/vocals.wav", songs_dir + "/current_song/chorus.mp3")
 
-        # On Beat?
+        if ratio1 >= 1:
+            vocals_b_matched = AudioSegment.from_file(matched_vocals_path1)
+            
+            # PART 2: Song A instrumental + Song B vocals
+            a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(2000)
+            b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in+tease_duration_ms].fade_in(2000)
+            part2 = a_instr_tease.overlay(b_vocals_tease)
+
+            # PART 3: Song B continued
+            part3 = vocals_transition[(vocals_transition_in+tease_duration_ms) * ratio1:]
+            part3 = part3.overlay(instrumental_transition[(vocals_transition_in+tease_duration_ms) * ratio1:].fade_in(2000))
+        else:
+            instrumentals_a_matched = AudioSegment.from_file(matched_vocals_path2)
+            
+            # PART 2: Song A instrumental + Song B vocals
+            a_instr_tease = instrumentals_a_matched[
+                int(vocals_current_down * ratio2) : int((vocals_current_down + tease_duration_ms) * ratio2)
+            ].fade_out(2000)
+
+            b_vocals_tease = vocals_transition[
+                vocals_transition_in : vocals_transition_in + tease_duration_ms
+            ].fade_in(2000)
+
+            part2 = a_instr_tease.overlay(b_vocals_tease)
+
+            # PART 3: Song B continued
+            part3 = vocals_transition[vocals_transition_in + tease_duration_ms :]
+            part3 = part3.overlay(
+                instrumental_transition[vocals_transition_in + tease_duration_ms :].fade_in(2000)
+            )
+
         tease_duration_ms = 10000
 
         # PART 1: Song A
         part1 = song_current[:vocals_current_down]
-
-        # PART 2: Song A instrumental + Song B vocals
-        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(2000)
-        b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in+tease_duration_ms].fade_in(2000)
-        part2 = a_instr_tease.overlay(b_vocals_tease)
-
-        # PART 3: Song B continued
-        part3 = vocals_transition[(vocals_transition_in+tease_duration_ms) * ratio:]
-        part3 = part3.overlay(instrumental_transition[(vocals_transition_in+tease_duration_ms) * ratio:].fade_in(2000))
 
         final_transition = part1 + part2 + part3
         output_file = songs_dir + "/dj_transition.mp3"
