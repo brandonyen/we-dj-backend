@@ -15,7 +15,7 @@ def transition_score(source, target):
     energy_diff = abs(source['energy'] - target['energy'])
     return camelot_penalty * 5 + bpm_diff * 5 + loudness_diff + energy_diff * 100
 
-def is_too_similar(song1, song2, bpm_thresh=2, loudness_thresh=500):
+def is_too_similar(song1, song2, bpm_thresh=0.5, loudness_thresh=10):
     same_key = song1['camelot_key'] == song2['camelot_key']
     bpm_close = abs(song1['bpm'] - song2['bpm']) < bpm_thresh
     return same_key and bpm_close
