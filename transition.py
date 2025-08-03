@@ -183,11 +183,11 @@ def create_transition(songs_dir, transition_type="crossfade"):
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
 
         # PART 1: Song A
-        part1 = vocals_current[:vocals_current_down].fade_out(2000)
+        part1 = vocals_current[:vocals_current_down].fade_out(1000)
         part1 = part1.overlay(instrumental_current[:vocals_current_down])
             
         # PART 2: Song A instrumental + Song B vocals
-        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(2000)
+        a_instr_tease = instrumental_current[vocals_current_down:vocals_current_down + tease_duration_ms].fade_out(1000)
         b_vocals_tease = vocals_b_matched[vocals_transition_in:vocals_transition_in + tease_duration_ms].fade_in(2000)
         part2 = a_instr_tease.overlay(b_vocals_tease)
 
