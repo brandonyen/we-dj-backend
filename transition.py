@@ -97,7 +97,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     crossfade_beats = 4
 
     # Desired minimum time before transition in seconds
-    min_time_before_transition = 8
+    min_time_before_transition = 12
 
     # Find the beat index closest to min_time_before_transition
     start_beat_idx = 0
@@ -154,7 +154,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         full_current = song_current[:scratch_start]
 
         # Scratching
-        scratch_loop = AudioSegment.from_file('transitions' + "/crazy_scratch_loop.wav")
+        scratch_loop = AudioSegment.from_file('transitions' + "/crazy_scratch_loop.wav")[:750]
 
         # Full transition
         final_transition = full_current + scratch_loop + song_transition
