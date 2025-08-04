@@ -63,57 +63,31 @@ def get_bpm_essentia(audio, sr):
     bpm, _, _, _, _ = rhythm_extractor(audio)
     return bpm
 
-def match_bpm(songs_dir, path_to_match):
-    # Load current and transition songs for BPM comparison
+def match_bpm(songs_dir, target_path):
+    # Create two independent loader instances
     loader1 = es.MonoLoader(filename=os.path.join(songs_dir, "current_song/song.mp3"))
-    current_audio = loader1()
+    source_audio = loader1()
 
+    # It's important NOT to reuse loader1 here
     loader2 = es.MonoLoader(filename=os.path.join(songs_dir, "transition_song/song.mp3"))
-    transition_audio = loader2()
+    target_audio = loader2()
 
     sr = 44100
-    current_bpm = get_bpm_essentia(current_audio, sr)
-    transition_bpm = get_bpm_essentia(transition_audio, sr)
+    source_bpm = get_bpm_essentia(source_audio, sr)
+    target_bpm = get_bpm_essentia(target_audio, sr)
 
-    print(f"CURRENT BPM: {current_bpm:.2f}")
-    print(f"TRANSITION BPM: {transition_bpm:.2f}")
+    stretch_ratio = source_bpm / target_bpm
 
-    # Determine which stem to stretch
-    if current_bpm == transition_bpm:
-        print("BPMs already match, no need to stretch.")
-        return path_to_match, 1.0
-
-    # Decide which one to stretch
-    path_basename = os.path.basename(path_to_match)
-    is_target_current = "current" in path_basename.lower()
-    is_target_transition = "transition" in path_basename.lower()
-
-    stretch_target = None
-    stretch_ratio = 1.0
-
-    if current_bpm > transition_bpm:
-        # Stretch transition song (slower) to match current song
-        if is_target_transition:
-            stretch_ratio = current_bpm / transition_bpm
-            stretch_target = path_to_match
-    else:
-        # Stretch current song (slower) to match transition song
-        if is_target_current:
-            stretch_ratio = transition_bpm / current_bpm
-            stretch_target = path_to_match
-
-    # If the input is the faster one, don't stretch
-    if not stretch_target:
-        print("No stretching needed for this file.")
-        return path_to_match, 1.0
-
-    # Apply time-stretch
-    y, stem_sr = sf.read(stretch_target)
+    # Load stereo audio using soundfile for processing
+    y, stem_sr = sf.read(target_path)
     y_stretched = pyrb.time_stretch(y, stem_sr, stretch_ratio)
-    y_stretched /= np.max(np.abs(y_stretched))  # Normalize to prevent clipping
+    y_stretched /= np.max(np.abs(y_stretched))
 
-    stem_path = os.path.splitext(stretch_target)[0] + "_matched.wav"
+    stem_path = os.path.splitext(target_path)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
+
+    print(f"CURRENT BPM: {source_bpm:.2f}")
+    print(f"TRANSITION BPM: {target_bpm:.2f}")
 
     return stem_path, stretch_ratio
 
