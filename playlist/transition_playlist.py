@@ -198,6 +198,27 @@ def create_transition(songs_dir, vticf, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
     
     elif transition_type == "vocals_crossover":
+
+        # Desired minimum time before transition in seconds
+        min_time_before_transition = 45
+
+        # Song A transition out timing
+        start_beat_idx = next((i for i, t in enumerate(beats_current) if t >= min_time_before_transition), 0)
+        fade_start_time_current = beats_current[start_beat_idx]
+        fade_end_time_current = beats_current[start_beat_idx + crossfade_beats]
+
+        # Song B transition in timing (matching the crossfade duration)
+        transition_start_beat_idx = 8  # or choose dynamically
+        fade_start_time_transition = beats_transition[transition_start_beat_idx]
+        fade_end_time_transition = beats_transition[transition_start_beat_idx + crossfade_beats]
+
+        # Convert to milliseconds
+        vocals_current_down = int(fade_start_time_current * 1000)
+        vocals_transition_in = int(fade_start_time_transition * 1000)  # CORRECTED
+        transition_start_time = int(fade_start_time_transition * 1000)  # entry point of Song B audio
+        transition_end_time_b = int(fade_end_time_transition * 1000)    # when B has fully entered
+        transition_start_other = vocals_current_down
+
         matched_vocals_path, ratio1 = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         tease_duration_ms = 10000
 
