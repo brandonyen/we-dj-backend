@@ -62,6 +62,6 @@ def transition_songs(song_list, output_path="output/final_mix.mp3", transition_t
     # Create full mix from song list
     create_full_mix(song_paths, transition_type=transition_type, output_file=output_path)
 
-def main():
+if __name__ == '__main__':
     playlist = ["track1", "track2", "track3"]
     transition_songs(playlist, output_path="my_mix.mp3", transition_type="vocals_crossover")
