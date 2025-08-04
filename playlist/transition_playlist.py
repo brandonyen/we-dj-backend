@@ -307,7 +307,7 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
 
         # Offset the transition amount for duplicates
         final_mix = final_mix[:-start_b]
-        transition_audio = transition_audio[start_b:]
+        transition_audio = transition_audio[(60000-start_b):]
         final_mix += transition_audio
 
         # Clean up
