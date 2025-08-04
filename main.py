@@ -13,11 +13,16 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC
 from typing import List
 import pandas as pd
+from supabase import create_client, Client
 
 app = FastAPI()
 load_dotenv()
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
+url = os.environ.get('SUPABASE_URL')
+key = os.environ.get('SUPABASE_KEY')
+
+supabase: Client = create_client(url, key)
 
 cookie_path = 'cookies.txt'
 
@@ -104,8 +109,8 @@ def get_thumbnail(song_uuid: str, thumbnail_type: str):
 
 @app.get('/api/get_all_songs')
 def get_all_songs():
-    df = pd.read_csv("song_metadata.csv")
-    filenames = df["filename"].dropna().astype(str).tolist()
+    response = supabase.table("songs").select("filename").execute()
+    filenames = [item["filename"] for item in response.data]
     return filenames
 
 @app.post('/api/delete_songs')
@@ -113,12 +118,10 @@ async def delete_songs(request: Request):
     data = await request.json()
     song_ids: List[str] = data.get("song_ids", [])
 
-    df = pd.read_csv('song_metadata.csv')
     not_deleted = []
 
     for song_id in song_ids:
         file_path = os.path.join('songs', song_id)
-
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -127,7 +130,7 @@ async def delete_songs(request: Request):
         else:
             not_deleted.append(song_id)
 
-    df = df[~df['filename'].isin(song_ids)]
-    df.to_csv('song_metadata.csv', index=False)
+    for sid in song_ids:
+        supabase.table("songs").delete().eq("filename", sid).execute()
 
     return {"not_deleted": not_deleted}
