@@ -30,22 +30,31 @@ def extract_chorus(input_file, output_path, duration=30):
     
     # Compute MFCCs
     mfcc = librosa.feature.mfcc(y=samples, sr=sr, hop_length=hop_length, n_mfcc=13)
-    # Compute variance of MFCCs over time axis (frame-wise vocal variability)
     mfcc_var = np.var(mfcc, axis=0)
     
     frames_per_sec = sr / hop_length
     window_length = int(duration * frames_per_sec)
     
-    # Smooth onset envelope and MFCC variance using convolution over window length
     onset_energy = np.convolve(onset_env, np.ones(window_length), 'valid')
     mfcc_var_energy = np.convolve(mfcc_var, np.ones(window_length), 'valid')
 
-    # Combine the two signals with weights (tune weights if you want)
     combined_score = onset_energy * 0.6 + mfcc_var_energy * 0.4
 
     max_pos = np.argmax(combined_score)
     start_time_sec = max_pos * hop_length / sr
-    start_ms = int(start_time_sec * 1000)
+
+    # Beat tracking: get beat frames and times
+    tempo, beat_frames = librosa.beat.beat_track(y=samples, sr=sr, hop_length=hop_length)
+    beat_times = librosa.frames_to_time(beat_frames, sr=sr, hop_length=hop_length)
+
+    # Find closest beat time less than or equal to start_time_sec
+    beats_before = beat_times[beat_times <= start_time_sec]
+    if len(beats_before) == 0:
+        aligned_start = 0.0  # fallback to start of song if no beat before
+    else:
+        aligned_start = beats_before[-1]
+
+    start_ms = int(aligned_start * 1000)
     end_ms = start_ms + int(duration * 1000)
 
     chorus = audio[start_ms:end_ms]
