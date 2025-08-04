@@ -12,5 +12,5 @@ def connector_playlist(song_list: List[str]):
     song_paths = search_all(song_list, uuid_folder, 'cookies.txt')
     df = analyze_song_list(song_paths)
     ordered_paths = order_songs_for_transition(df)
-    create_full_mix(uuid_folder, ordered_paths, output_file=uuid_folder+"/playlist_transition.mp3", transition_type='vocals_crossover')
+    create_full_mix(uuid_folder, ordered_paths, output_file=uuid_folder+"/playlist_transition.mp3")
     return folder_uuid
