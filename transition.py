@@ -65,11 +65,14 @@ def get_bpm_essentia(audio, sr):
 
 def match_bpm(songs_dir, target_path):
     # Load both source and target audio
-    loader = es.MonoLoader(filename=songs_dir + "/current_song/song.mp3")
-    source_audio = loader()
-    
-    loader.filename = songs_dir + "/transition_song/song.mp3"
-    target_audio = loader()
+    source_loader = es.MonoLoader(filename=songs_dir + "/current_song/song.mp3")
+    source_audio = source_loader()
+
+    # Reset Essentia pool to avoid memory overlap
+    es.reset()
+
+    target_loader = es.MonoLoader(filename=songs_dir + "/transition_song/song.mp3")
+    target_audio = target_loader()
 
     sr = 44100  # MonoLoader defaults to 44.1kHz unless you override
 
