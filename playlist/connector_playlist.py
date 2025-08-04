@@ -5,9 +5,9 @@ import uuid
 from search_playlist import search_all
 
 if __name__ == '__main__':
-    playlist = ["track1", "track2", "track3"]
+    playlist = ["the less i know the better", "californication", "sicko mode"]
     folder_uuid = str(uuid.uuid4())
-    uuid_folder = os.path.join("playlist", folder_uuid)
+    uuid_folder = os.path.join("playlist", "temp", folder_uuid)
     os.makedirs(uuid_folder, exist_ok=True)
     search_all(playlist, uuid_folder, 'cookies.txt')
     create_full_mix(uuid_folder, transition_type="vocals_crossover", output_file=uuid_folder+"/test.mp3")

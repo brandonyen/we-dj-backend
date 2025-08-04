@@ -23,16 +23,11 @@ def search_and_download(query, output_dir, cookie_path):
         'cookiefile': cookie_path,
         'format': 'bestaudio/best',
         'outtmpl': output_dir,
-        'writethumbnail': True,
         'postprocessors': [
             {
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
-            },
-            {
-                'key': 'FFmpegThumbnailsConvertor',
-                'format': 'jpg',
             },
         ],
         'prefer_ffmpeg': True,
@@ -45,5 +40,5 @@ def search_and_download(query, output_dir, cookie_path):
 def search_all(queries: List[str], output_path: str, cookie_path: str):
     for index, query in enumerate(queries):
         query = query + " official audio"
-        song_path = os.path.join(output_path, index + ".mp3")
+        song_path = os.path.join(output_path, str(index))
         search_and_download(query, song_path, cookie_path)
