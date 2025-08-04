@@ -195,7 +195,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         tease_duration_ms = 12000
 
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
-        crossfade_duration = 2000
+        crossfade_duration = 3000
 
         # PART 1: Song A
         part1 = vocals_current[:vocals_current_down-crossfade_duration]
