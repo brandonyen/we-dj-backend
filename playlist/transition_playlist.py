@@ -301,7 +301,7 @@ def create_full_mix(uuid_folder, song_paths, transition_type="none", output_file
             else:
                 start_b = create_transition(transition_dir, transition_type='crossfade')
         else:
-            start_b = create_transition(transition_dir, transition_type='crossfade')
+            start_b = create_transition(transition_dir, transition_type=transition_type)
         
         # Load the resulting transition audio
         transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
