@@ -134,3 +134,16 @@ async def delete_songs(request: Request):
         supabase.table("songs").delete().eq("filename", sid).execute()
 
     return {"not_deleted": not_deleted}
+
+@app.get('/api/create_playlist')
+async def create_playlist(request: Request):
+    data = await request.json()
+    tracks: List[str] = data.get("tracks", [])
+
+@app.get('/api/get_playlist')
+async def get_playlist(playlist_uuid: str):
+    return FileResponse(
+        path=f'playlist/{playlist_uuid}/playlist_transition.mp3',
+        media_type="audio/mpeg",
+        filename="playlist_transition.mp3"
+    )
