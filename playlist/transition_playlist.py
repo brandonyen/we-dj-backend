@@ -232,6 +232,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
 
+
 def create_full_mix(song_paths, transition_type="crossfade", temp_root="temp_songs", output_file="full_mix.mp3"):
     assert len(song_paths) >= 2, "Need at least two songs for transitions."
 
@@ -244,30 +245,36 @@ def create_full_mix(song_paths, transition_type="crossfade", temp_root="temp_son
         transition_dir = os.path.join(temp_root, f"transition_{i}_{uuid.uuid4().hex[:6]}")
         os.makedirs(transition_dir, exist_ok=True)
 
-        # --- Save temp copies of the pair
-        song_a_path = os.path.join(transition_dir, "current_song.mp3")
-        song_b_path = os.path.join(transition_dir, "transition_song.mp3")
+        # Create subfolders expected by your pipeline
+        current_song_dir = os.path.join(transition_dir, "current_song")
+        transition_song_dir = os.path.join(transition_dir, "transition_song")
+        os.makedirs(current_song_dir, exist_ok=True)
+        os.makedirs(transition_song_dir, exist_ok=True)
+
+        # Copy song_a and song_b into these subfolders with consistent filenames
+        song_a_path = os.path.join(current_song_dir, "song.mp3")
+        song_b_path = os.path.join(transition_song_dir, "song.mp3")
         shutil.copy(song_a, song_a_path)
         shutil.copy(song_b, song_b_path)
 
-        # --- Extract choruses (optional)
-        extract_chorus(song_a_path, os.path.join(transition_dir, "current_song_chorus.mp3"))
-        extract_chorus(song_b_path, os.path.join(transition_dir, "transition_song_chorus.mp3"))
+        # Optional: Extract choruses (you can skip or keep this)
+        extract_chorus(song_a_path, os.path.join(current_song_dir, "chorus.mp3"))
+        extract_chorus(song_b_path, os.path.join(transition_song_dir, "chorus.mp3"))
 
-        # --- Stem separation
-        split_audio(song_a_path, os.path.join(transition_dir, "current_song"))
-        split_audio(song_b_path, os.path.join(transition_dir, "transition_song"))
+        # Stem separation (will save stems in current_song_dir and transition_song_dir)
+        split_audio(song_a_path, current_song_dir)
+        split_audio(song_b_path, transition_song_dir)
 
-        # --- Transition
+        # Create transition expects transition_dir containing current_song/ and transition_song/
         create_transition(transition_dir, transition_type=transition_type)
 
-        # --- Load the resulting transition
-        transition_audio = AudioSegment.from_mp3(os.path.join(transition_dir, "dj_transition.mp3"))
+        # Load the resulting transition audio
+        transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
+        transition_audio = AudioSegment.from_file(transition_audio_path)
         final_mix += transition_audio
 
-        # Optional: clean up to save space
+        # Clean up temp files
         shutil.rmtree(transition_dir)
 
-    # Export final mix
     final_mix.export(output_file, format="mp3")
-    print(f"✅ Final mix with {len(song_paths)} songs exported to: {output_file}")
+    print(f"✅ Final mix saved to {output_file}")
