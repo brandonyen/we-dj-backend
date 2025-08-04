@@ -40,10 +40,10 @@ def search_download(query: str, path: str, cookie_path: str):
     if safe_name not in df['filename'].values:
         supabase.table('songs').upsert({
             'filename': safe_name,
-            'bpm': bpm,
+            'bpm': float(bpm),
             'camelot_key': camelot,
-            'loudness': loudness,
-            'energy': energy
+            'loudness': float(loudness),
+            'energy': float(energy)
         }, on_conflict="filename").execute()
 
         song_path = os.path.join(path, "current_song", "song.mp3")
