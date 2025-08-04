@@ -13,8 +13,10 @@ import numpy as np
 import os
 import soundfile as sf
 import pyrubberband as pyrb
+import uuid
+import shutil
 
-def extract_chorus(input_file, output_path, duration=30):
+def extract_chorus(input_file, output_path, duration=60):
     audio = AudioSegment.from_mp3(input_file)
     samples = np.array(audio.get_array_of_samples()).astype(np.float32)
 
@@ -91,7 +93,7 @@ def match_bpm(songs_dir, target_path):
 
     return stem_path, stretch_ratio
 
-def create_transition(songs_dir, transition_type="crossfade"):
+def create_transition(songs_dir, vticf, transition_type="crossfade"):
     # Load stems for current song
     vocals_current = AudioSegment.from_file(songs_dir + "/current_song" + "/vocals.wav")
     bass_current   = AudioSegment.from_file(songs_dir + "/current_song" + "/bass.wav")
@@ -125,7 +127,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     crossfade_beats = 4
 
     # Desired minimum time before transition in seconds
-    min_time_before_transition = 8
+    min_time_before_transition = 45
 
     # Find the beat index closest to min_time_before_transition
     start_beat_idx = next((i for i, t in enumerate(beats_current) if t >= min_time_before_transition), 0)
@@ -145,6 +147,9 @@ def create_transition(songs_dir, transition_type="crossfade"):
     vocals_transition_in = int(fade_end_time_current * 1000)
     transition_start_time = int(fade_start_time_transition * 1000)
     transition_start_other = vocals_current_down
+    
+    a_cut = 60000-vticf
+    b_cut = vticf
 
     if transition_type == "crossfade":
         crossfade_duration = vocals_transition_in - vocals_current_down
@@ -167,6 +172,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
         # Final song
         final_transition = full_current + current_fade_out + transition_vocals_fade_in + transition_remainder
         output_file = songs_dir + "/dj_transition.mp3"
+
+        vticf = transition_start_time+2*crossfade_duration
 
     elif transition_type == "scratch":
         scratch_start = transition_start_other
@@ -211,7 +218,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         transition_start_time = int(fade_start_time_transition * 1000)  # entry point of Song B audio
         transition_end_time_b = int(fade_end_time_transition * 1000)    # when B has fully entered
         transition_start_other = vocals_current_down
-        
+
         matched_vocals_path, ratio1 = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
         tease_duration_ms = 10000
 
@@ -244,9 +251,80 @@ def create_transition(songs_dir, transition_type="crossfade"):
 
         final_transition = part1 + part1_5 + part2 + part2_5 + part3
         output_file = songs_dir + "/dj_transition.mp3"
+
+        vticf = int((vocals_transition_in + tease_duration_ms + crossfade_duration) * ratio1)
+        print(vticf)
     
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
 
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
+
+    return a_cut, b_cut, vticf
+
+
+def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"):
+    temp_root = os.path.join(uuid_folder, "temp_songs")
+    assert len(song_paths) >= 2, "Need at least two songs for transitions."
+
+    final_mix = AudioSegment.silent(duration=0)
+    os.makedirs(temp_root, exist_ok=True)
+
+    vticf = 0
+
+    for i in range(len(song_paths) - 1):
+        song_a = song_paths[i]
+        song_b = song_paths[i + 1]
+        transition_dir = os.path.join(temp_root, f"transition_{i}_{uuid.uuid4().hex[:6]}")
+        os.makedirs(transition_dir, exist_ok=True)
+
+        # Create subfolders expected by your pipeline
+        current_song_dir = os.path.join(transition_dir, "current_song")
+        transition_song_dir = os.path.join(transition_dir, "transition_song")
+        os.makedirs(current_song_dir, exist_ok=True)
+        os.makedirs(transition_song_dir, exist_ok=True)
+
+        # Extract chorus from A starting at the offset
+        chorus_a_path = os.path.join(current_song_dir, "chorus.mp3")
+        chorus_b_path = os.path.join(transition_song_dir, "chorus.mp3")
+
+        # Extract full chorus
+        extract_chorus(song_a, chorus_a_path)
+        extract_chorus(song_b, chorus_b_path)
+
+        # Rename to song.mp3 for processing
+        chorus_a_renamed = os.path.join(current_song_dir, "song.mp3")
+        chorus_b_renamed = os.path.join(transition_song_dir, "song.mp3")
+        shutil.move(chorus_a_path, chorus_a_renamed)
+        shutil.move(chorus_b_path, chorus_b_renamed)
+
+        # Stem separation
+        split_audio(chorus_a_renamed, current_song_dir)
+        split_audio(chorus_b_renamed, transition_song_dir)
+
+        # Create transition
+        if transition_type == "none":
+            matched_vocals_path, ratio = match_bpm(transition_dir, transition_dir + "/transition_song/vocals.wav")
+            if 0.97 <= ratio <= 1.03:
+                a_cut, b_cut, new_vticf = create_transition(transition_dir, vticf, transition_type='vocals_crossover')
+            else:
+                a_cut, b_cut, new_vticf = create_transition(transition_dir, vticf, transition_type='crossfade')
+        else:
+            a_cut, b_cut, new_vticf = create_transition(transition_dir, vticf, transition_type=transition_type)
+        
+        vticf = new_vticf
+
+        # Load transition audio
+        transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
+        transition_audio = AudioSegment.from_file(transition_audio_path)
+
+        transition_audio = transition_audio[b_cut:]
+        final_mix = final_mix[:-max(0, a_cut)]
+        final_mix += transition_audio
+
+        # Clean up
+        shutil.rmtree(transition_dir)
+
+    final_mix.export(output_file, format="mp3")
+    print(f"✅ Final mix saved to {output_file}")
