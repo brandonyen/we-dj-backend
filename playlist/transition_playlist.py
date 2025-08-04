@@ -233,16 +233,15 @@ def create_transition(songs_dir, transition_type="crossfade"):
     print(f"{transition_type.title()} DJ Transition created!")
 
 
-def create_full_mix(uuid_folder, transition_type="crossfade", output_file="full_mix.mp3"):
-    song_paths = sorted([
-        os.path.join(uuid_folder, f) for f in os.listdir(uuid_folder)
-        if f.endswith(".mp3")
-    ])
+def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output_file="full_mix.mp3"):
     temp_root = os.path.join(uuid_folder, "temp_songs")
     assert len(song_paths) >= 2, "Need at least two songs for transitions."
 
     final_mix = AudioSegment.silent(duration=0)
     os.makedirs(temp_root, exist_ok=True)
+
+    # Keep track of how far into each song we've already played
+    song_offsets = {path: 0 for path in song_paths}
 
     for i in range(len(song_paths) - 1):
         song_a = song_paths[i]
@@ -256,24 +255,31 @@ def create_full_mix(uuid_folder, transition_type="crossfade", output_file="full_
         os.makedirs(current_song_dir, exist_ok=True)
         os.makedirs(transition_song_dir, exist_ok=True)
 
-        # Extract choruses FIRST and use only those going forward
+        # Extract chorus from A starting at the offset
         chorus_a_path = os.path.join(current_song_dir, "chorus.mp3")
         chorus_b_path = os.path.join(transition_song_dir, "chorus.mp3")
 
+        # Extract full chorus
         extract_chorus(song_a, chorus_a_path)
         extract_chorus(song_b, chorus_b_path)
 
-        # Rename chorus.mp3 to song.mp3 because downstream expects that filename
+        # Optionally trim chorus B to skip already-used intro
+        if song_offsets[song_b] > 0:
+            b_audio = AudioSegment.from_file(chorus_b_path)
+            b_trimmed = b_audio[song_offsets[song_b]:]
+            b_trimmed.export(chorus_b_path, format="mp3")
+
+        # Rename to song.mp3 for processing
         chorus_a_renamed = os.path.join(current_song_dir, "song.mp3")
         chorus_b_renamed = os.path.join(transition_song_dir, "song.mp3")
         shutil.move(chorus_a_path, chorus_a_renamed)
         shutil.move(chorus_b_path, chorus_b_renamed)
 
-        # Stem separation on chorus only
+        # Stem separation
         split_audio(chorus_a_renamed, current_song_dir)
         split_audio(chorus_b_renamed, transition_song_dir)
 
-        # Create transition from chorus stems
+        # Create transition
         create_transition(transition_dir, transition_type=transition_type)
 
         # Load the resulting transition audio
@@ -281,7 +287,11 @@ def create_full_mix(uuid_folder, transition_type="crossfade", output_file="full_
         transition_audio = AudioSegment.from_file(transition_audio_path)
         final_mix += transition_audio
 
-        # Clean up temp files
+        # Estimate how much of song B was used in this transition
+        used_ms = len(transition_audio) // 2  # rough guess, you could be more precise if needed
+        song_offsets[song_b] += used_ms
+
+        # Clean up
         shutil.rmtree(transition_dir)
 
     final_mix.export(output_file, format="mp3")
