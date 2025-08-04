@@ -252,7 +252,7 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
     final_mix = AudioSegment.silent(duration=0)
     os.makedirs(temp_root, exist_ok=True)
 
-    # Keep track of how far into each song we've already played
+    # Track how far into each song has already been played
     song_offsets = {path: 0 for path in song_paths}
 
     for i in range(len(song_paths) - 1):
@@ -275,7 +275,7 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
         extract_chorus(song_a, chorus_a_path)
         extract_chorus(song_b, chorus_b_path)
 
-        # Optionally trim chorus B to skip already-used intro
+        # Trim B if part was already used
         if song_offsets[song_b] > 0:
             b_audio = AudioSegment.from_file(chorus_b_path)
             b_trimmed = b_audio[song_offsets[song_b]:]
@@ -300,20 +300,27 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
                 start_b = create_transition(transition_dir, transition_type='crossfade')
         else:
             start_b = create_transition(transition_dir, transition_type=transition_type)
-        
-        # Load the resulting transition audio
+
+        # Load transition audio
         transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
         transition_audio = AudioSegment.from_file(transition_audio_path)
 
-        # Offset the transition amount for duplicates
-        trim_duration = start_b - song_offsets[song_paths[i]]
-        final_mix = final_mix[:-trim_duration]
-        
-        transition_audio = transition_audio[start_b:]
-        final_mix += transition_audio
+        # Determine how much of song A is in the transition (in ms)
+        total_transition_duration = len(transition_audio)
+        duration_from_a = total_transition_duration - (len(transition_audio) - start_b)
+
+        # Trim reused portion of song A from final mix
+        final_mix = final_mix[:-duration_from_a]
+
+        # Add transition audio (starting at song B's entry point)
+        final_mix += transition_audio[start_b:]
+
+        # Track how much of song B has now been played (for future trimming)
+        song_offsets[song_b] = start_b
 
         # Clean up
         shutil.rmtree(transition_dir)
 
     final_mix.export(output_file, format="mp3")
     print(f"✅ Final mix saved to {output_file}")
+
