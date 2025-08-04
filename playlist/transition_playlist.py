@@ -233,11 +233,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     print(f"{transition_type.title()} DJ Transition created!")
 
 
-def create_full_mix(uuid_folder, transition_type="crossfade", output_file="full_mix.mp3"):
-    song_paths = sorted([
-        os.path.join(uuid_folder, f) for f in os.listdir(uuid_folder)
-        if f.endswith(".mp3")
-    ])
+def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output_file="full_mix.mp3"):
     temp_root = os.path.join(uuid_folder, "temp_songs")
     assert len(song_paths) >= 2, "Need at least two songs for transitions."
 
