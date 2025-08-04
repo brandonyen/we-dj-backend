@@ -256,21 +256,24 @@ def create_full_mix(uuid_folder, transition_type="crossfade", output_file="full_
         os.makedirs(current_song_dir, exist_ok=True)
         os.makedirs(transition_song_dir, exist_ok=True)
 
-        # Copy song_a and song_b into these subfolders with consistent filenames
-        song_a_path = os.path.join(current_song_dir, "song.mp3")
-        song_b_path = os.path.join(transition_song_dir, "song.mp3")
-        shutil.copy(song_a, song_a_path)
-        shutil.copy(song_b, song_b_path)
+        # Extract choruses FIRST and use only those going forward
+        chorus_a_path = os.path.join(current_song_dir, "chorus.mp3")
+        chorus_b_path = os.path.join(transition_song_dir, "chorus.mp3")
 
-        # Optional: Extract choruses (you can skip or keep this)
-        extract_chorus(song_a_path, os.path.join(current_song_dir, "chorus.mp3"))
-        extract_chorus(song_b_path, os.path.join(transition_song_dir, "chorus.mp3"))
+        extract_chorus(song_a, chorus_a_path)
+        extract_chorus(song_b, chorus_b_path)
 
-        # Stem separation (will save stems in current_song_dir and transition_song_dir)
-        split_audio(song_a_path, current_song_dir)
-        split_audio(song_b_path, transition_song_dir)
+        # Rename chorus.mp3 to song.mp3 because downstream expects that filename
+        chorus_a_renamed = os.path.join(current_song_dir, "song.mp3")
+        chorus_b_renamed = os.path.join(transition_song_dir, "song.mp3")
+        shutil.move(chorus_a_path, chorus_a_renamed)
+        shutil.move(chorus_b_path, chorus_b_renamed)
 
-        # Create transition expects transition_dir containing current_song/ and transition_song/
+        # Stem separation on chorus only
+        split_audio(chorus_a_renamed, current_song_dir)
+        split_audio(chorus_b_renamed, transition_song_dir)
+
+        # Create transition from chorus stems
         create_transition(transition_dir, transition_type=transition_type)
 
         # Load the resulting transition audio
