@@ -64,37 +64,30 @@ def get_bpm_essentia(audio, sr):
     return bpm
 
 def match_bpm(songs_dir, target_path):
-    # Load both source and target audio
-    source_loader = es.MonoLoader(filename=songs_dir + "/current_song/song.mp3")
-    source_audio = source_loader()
+    # Create two independent loader instances
+    loader1 = es.MonoLoader(filename=os.path.join(songs_dir, "current_song/song.mp3"))
+    source_audio = loader1()
 
-    # Reset Essentia pool to avoid memory overlap
-    es.reset()
+    # It's important NOT to reuse loader1 here
+    loader2 = es.MonoLoader(filename=os.path.join(songs_dir, "transition_song/song.mp3"))
+    target_audio = loader2()
 
-    target_loader = es.MonoLoader(filename=songs_dir + "/transition_song/song.mp3")
-    target_audio = target_loader()
-
-    sr = 44100  # MonoLoader defaults to 44.1kHz unless you override
-
+    sr = 44100
     source_bpm = get_bpm_essentia(source_audio, sr)
     target_bpm = get_bpm_essentia(target_audio, sr)
 
     stretch_ratio = source_bpm / target_bpm
 
-    # Load again using sf to preserve stereo for output
+    # Load stereo audio using soundfile for processing
     y, stem_sr = sf.read(target_path)
-    
-    # Time-stretch using Rubberband (preserves pitch)
     y_stretched = pyrb.time_stretch(y, stem_sr, stretch_ratio)
-
-    # Normalize
-    y_stretched = y_stretched / np.max(np.abs(y_stretched))
+    y_stretched /= np.max(np.abs(y_stretched))
 
     stem_path = os.path.splitext(target_path)[0] + "_matched.wav"
     sf.write(stem_path, y_stretched, stem_sr)
 
-    print(f"CURRENT BPM: {source_bpm:.2f}\n")
-    print(f"TRANSITION BPM: {target_bpm:.2f}\n")
+    print(f"CURRENT BPM: {source_bpm:.2f}")
+    print(f"TRANSITION BPM: {target_bpm:.2f}")
 
     return stem_path, stretch_ratio
 
