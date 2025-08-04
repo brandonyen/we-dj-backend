@@ -234,7 +234,9 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = part1 + part1_5 + part2 + part2_5 + part3
         output_file = songs_dir + "/dj_transition.mp3"
 
-        start_b = int((vocals_transition_in+tease_duration_ms + crossfade_duration) * ratio1)
+        b_start_fade_ms = vocals_transition_in - crossfade_duration
+        b_full_entry_ms = int((vocals_transition_in + tease_duration_ms + crossfade_duration) * ratio1)
+        start_b = b_full_entry_ms - b_start_fade_ms
     
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
@@ -245,7 +247,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     return start_b
 
 
-def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output_file="full_mix.mp3"):
+def create_full_mix(uuid_folder, song_paths, transition_type="none", output_file="full_mix.mp3"):
     temp_root = os.path.join(uuid_folder, "temp_songs")
     assert len(song_paths) >= 2, "Need at least two songs for transitions."
 
@@ -292,7 +294,14 @@ def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output
         split_audio(chorus_b_renamed, transition_song_dir)
 
         # Create transition
-        start_b = create_transition(transition_dir, transition_type=transition_type)
+        if transition_type == "none":
+            matched_vocals_path, ratio = match_bpm(transition_dir, transition_dir + "/transition_song/vocals.wav")
+            if 0.97 <= ratio <= 1.03:
+                start_b = create_transition(transition_dir, transition_type='vocals_crossover')
+            else:
+                start_b = create_transition(transition_dir, transition_type='crossfade')
+        else:
+            start_b = create_transition(transition_dir, transition_type='crossfade')
         
         # Load the resulting transition audio
         transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
