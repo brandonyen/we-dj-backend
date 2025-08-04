@@ -13,7 +13,7 @@ def transition_score(source, target):
     bpm_diff = abs(source['bpm'] - target['bpm'])
     loudness_diff = abs(source['loudness'] - target['loudness'])
     energy_diff = abs(source['energy'] - target['energy'])
-    return camelot_penalty * 10 + bpm_diff * 5 + loudness_diff * 10 + energy_diff * 200
+    return camelot_penalty ** 2 * 10 + bpm_diff ** 2 * 5 + loudness_diff ** 2 * 10 + energy_diff ** 2 * 200
 
 def find_best_transition(current_song_data, csv_path):
     df = pd.read_csv(csv_path)
