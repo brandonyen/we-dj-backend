@@ -18,8 +18,9 @@ def search_download(query, path, cookie_path):
     transition_song_name = find_best_transition(current_song_data, 'song_metadata.csv')
     df = pd.read_csv('song_metadata.csv')
     if not ((df['filename'] == current_song_name).any()):
+        safe_name = current_song_name.replace("/", "_").replace("\\", "_")
         new_row = {
-            'filename': current_song_name,
+            'filename': safe_name,
             'bpm': bpm,
             'camelot_key': camelot,
             'loudness': loudness,
@@ -28,10 +29,7 @@ def search_download(query, path, cookie_path):
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         df.to_csv('song_metadata.csv', index=False)
         song_path = os.path.join(path, "current_song", "song.mp3")
-        print(song_path)
-        safe_name = current_song_name.replace("/", "_").replace("\\", "_")
         write_path = os.path.join('songs', f"{safe_name}.mp3")
-        print(write_path)
         shutil.copyfile(song_path, write_path)
     return current_song_name, transition_song_name
 
