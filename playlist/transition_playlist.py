@@ -234,9 +234,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = part1 + part1_5 + part2 + part2_5 + part3
         output_file = songs_dir + "/dj_transition.mp3"
 
-        b_full_entry_ms = vocals_transition_in + tease_duration_ms + crossfade_duration
-        b_start_fade_ms = vocals_transition_in - crossfade_duration
-        start_b = b_full_entry_ms - b_start_fade_ms
+        start_b = int((vocals_transition_in + tease_duration_ms + crossfade_duration) * ratio1)
     
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
@@ -308,7 +306,7 @@ def create_full_mix(uuid_folder, song_paths, transition_type="none", output_file
         transition_audio = AudioSegment.from_file(transition_audio_path)
 
         # Offset the transition amount for duplicates
-        final_mix = final_mix[:-(60000-start_b)]
+        final_mix = final_mix[:-start_b]
         transition_audio = transition_audio[start_b:]
         final_mix += transition_audio
 
