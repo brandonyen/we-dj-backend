@@ -4,7 +4,7 @@ from transition_playlist import create_full_mix
 import uuid
 from search_playlist import search_all
 
-def main():
+if __name__ == '__main__':
     playlist = ["track1", "track2", "track3"]
     folder_uuid = str(uuid.uuid4())
     uuid_folder = os.path.join("playlist", folder_uuid)
