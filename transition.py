@@ -192,7 +192,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     
     elif transition_type == "vocals_crossover":
         matched_vocals_path, ratio1 = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
-        tease_duration_ms = 12000
+        tease_duration_ms = 10000
 
         vocals_b_matched = AudioSegment.from_file(matched_vocals_path)
         crossfade_duration = 3000
@@ -215,7 +215,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         a_instr_tease = instrumental_current[vocals_current_down + tease_duration_ms:vocals_current_down + tease_duration_ms + crossfade_duration].fade_out(crossfade_duration)
         b_vocals_tease = vocals_b_matched[vocals_transition_in + tease_duration_ms:vocals_transition_in + tease_duration_ms + crossfade_duration]
         part2_5 = a_instr_tease.overlay(b_vocals_tease)
-        part2_5 = part2_5.overlay(instrumental_transition[int((vocals_transition_in+tease_duration_ms) * ratio1):].fade_in(crossfade_duration))
+        part2_5 = part2_5.overlay(instrumental_transition[int((vocals_transition_in+tease_duration_ms) * ratio1):int((vocals_transition_in+tease_duration_ms+crossfade_duration) * ratio1)].fade_in(crossfade_duration))
 
         # PART 3: Song B continued
         part3 = vocals_transition[int((vocals_transition_in+tease_duration_ms + crossfade_duration) * ratio1):]
