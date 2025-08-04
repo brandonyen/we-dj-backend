@@ -14,7 +14,7 @@ import os
 import soundfile as sf
 import pyrubberband as pyrb
 
-def extract_chorus(input_file, output_path, duration=20):
+def extract_chorus(input_file, output_path, duration=25):
     audio = AudioSegment.from_mp3(input_file)
     samples = np.array(audio.get_array_of_samples()).astype(np.float32)
 
