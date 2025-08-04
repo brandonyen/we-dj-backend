@@ -231,7 +231,8 @@ def create_transition(songs_dir, vticf, transition_type="crossfade"):
         final_transition = part1 + part1_5 + part2 + part2_5 + part3
         output_file = songs_dir + "/dj_transition.mp3"
 
-        vticf = vocals_current_down + tease_duration_ms + crossfade_duration
+        vticf = int((vocals_transition_in+tease_duration_ms + crossfade_duration) * ratio1)
+        print(vticf)
     
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
