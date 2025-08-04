@@ -13,6 +13,7 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC
 from typing import List
 from supabase import create_client, Client
+from playlist.connector_playlist import connector_playlist
 
 app = FastAPI()
 load_dotenv()
@@ -134,15 +135,16 @@ async def delete_songs(request: Request):
 
     return {"not_deleted": not_deleted}
 
-@app.get('/api/create_playlist')
+@app.post('/api/create_playlist')
 async def create_playlist(request: Request):
     data = await request.json()
-    tracks: List[str] = data.get("tracks", [])
+    tracks: List[str] = data.get("songs", [])
+    return connector_playlist(tracks)
 
 @app.get('/api/get_playlist')
 async def get_playlist(playlist_uuid: str):
     return FileResponse(
-        path=f'playlist/{playlist_uuid}/playlist_transition.mp3',
+        path=f'playlist/temp/{playlist_uuid}/playlist_transition.mp3',
         media_type="audio/mpeg",
         filename="playlist_transition.mp3"
     )
