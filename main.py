@@ -12,7 +12,6 @@ import urllib.parse
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC
 from typing import List
-import pandas as pd
 from supabase import create_client, Client
 
 app = FastAPI()
