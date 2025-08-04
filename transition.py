@@ -15,7 +15,7 @@ import soundfile as sf
 import pyrubberband as pyrb
 
 def extract_chorus(input_file, output_path, duration=30):
-    audio = AudioSegment.from_file(input_file)
+    audio = AudioSegment.from_mp3(input_file)
     samples = np.array(audio.get_array_of_samples()).astype(np.float32)
 
     if audio.channels == 2:
@@ -23,40 +23,15 @@ def extract_chorus(input_file, output_path, duration=30):
         samples = samples.mean(axis=1)
 
     sr = audio.frame_rate
+    onset_env = librosa.onset.onset_strength(y=samples, sr=sr)
     hop_length = 512
-    
-    # Compute onset envelope
-    onset_env = librosa.onset.onset_strength(y=samples, sr=sr, hop_length=hop_length)
-    
-    # Compute MFCCs
-    mfcc = librosa.feature.mfcc(y=samples, sr=sr, hop_length=hop_length, n_mfcc=13)
-    mfcc_var = np.var(mfcc, axis=0)
-    
     frames_per_sec = sr / hop_length
     window_length = int(duration * frames_per_sec)
-    
-    onset_energy = np.convolve(onset_env, np.ones(window_length), 'valid')
-    mfcc_var_energy = np.convolve(mfcc_var, np.ones(window_length), 'valid')
-
-    combined_score = onset_energy * 0.6 + mfcc_var_energy * 0.4
-
-    max_pos = np.argmax(combined_score)
+    energy = np.convolve(onset_env, np.ones(window_length), 'valid')
+    max_pos = np.argmax(energy)
     start_time_sec = max_pos * hop_length / sr
-
-    # Beat tracking: get beat frames and times
-    tempo, beat_frames = librosa.beat.beat_track(y=samples, sr=sr, hop_length=hop_length)
-    beat_times = librosa.frames_to_time(beat_frames, sr=sr, hop_length=hop_length)
-
-    # Find closest beat time less than or equal to start_time_sec
-    beats_before = beat_times[beat_times <= start_time_sec]
-    if len(beats_before) == 0:
-        aligned_start = 0.0  # fallback to start of song if no beat before
-    else:
-        aligned_start = beats_before[-1]
-
-    start_ms = int(aligned_start * 1000)
+    start_ms = int(start_time_sec * 1000)
     end_ms = start_ms + int(duration * 1000)
-
     chorus = audio[start_ms:end_ms]
     chorus.export(output_path, format="mp3")
 
