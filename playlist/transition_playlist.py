@@ -173,6 +173,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
         start_b = int(transition_start_time+2*crossfade_duration)
+        a_length = vocals_transition_in
 
     elif transition_type == "scratch":
         scratch_start = transition_start_other
@@ -184,6 +185,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
         start_b = 0
+        a_length = 60000-scratch_start
 
     elif transition_type == "crazy_scratch":
         scratch_start = transition_start_other
@@ -199,6 +201,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
         start_b = 0
+        a_length = 60000-scratch_start
     
     elif transition_type == "vocals_crossover":
         matched_vocals_path, ratio1 = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
@@ -235,6 +238,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         output_file = songs_dir + "/dj_transition.mp3"
 
         start_b = int((vocals_transition_in + tease_duration_ms + crossfade_duration) * ratio1)
+        a_length = vocals_current_down + tease_duration_ms + crossfade_duration
     
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
@@ -242,7 +246,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
 
-    return start_b
+    return a_length, start_b
 
 
 def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"):
@@ -295,18 +299,18 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
         if transition_type == "none":
             matched_vocals_path, ratio = match_bpm(transition_dir, transition_dir + "/transition_song/vocals.wav")
             if 0.97 <= ratio <= 1.03:
-                start_b = create_transition(transition_dir, transition_type='vocals_crossover')
+                a_length, start_b = create_transition(transition_dir, transition_type='vocals_crossover')
             else:
-                start_b = create_transition(transition_dir, transition_type='crossfade')
+                a_length, start_b = create_transition(transition_dir, transition_type='crossfade')
         else:
-            start_b = create_transition(transition_dir, transition_type=transition_type)
+            a_length, start_b = create_transition(transition_dir, transition_type=transition_type)
         
         # Load the resulting transition audio
         transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
         transition_audio = AudioSegment.from_file(transition_audio_path)
 
         # Offset the transition amount for duplicates
-        final_mix = final_mix[:-(60000-start_b)]
+        final_mix = final_mix[:-(a_length-start_b)]
         transition_audio = transition_audio[start_b:]
         final_mix += transition_audio
 
