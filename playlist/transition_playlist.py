@@ -232,6 +232,10 @@ def create_transition(songs_dir, transition_type="crossfade"):
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
 
+    # Return how much of song B was used
+    used_from_b = transition_start_time + 2 * crossfade_duration
+    return used_from_b  # in ms
+
 
 def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output_file="full_mix.mp3"):
     temp_root = os.path.join(uuid_folder, "temp_songs")
@@ -280,16 +284,15 @@ def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output
         split_audio(chorus_b_renamed, transition_song_dir)
 
         # Create transition
-        create_transition(transition_dir, transition_type=transition_type)
+        used_ms_b = create_transition(transition_dir, transition_type=transition_type)
 
         # Load the resulting transition audio
         transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
         transition_audio = AudioSegment.from_file(transition_audio_path)
         final_mix += transition_audio
 
-        # Estimate how much of song B was used in this transition
-        used_ms = len(transition_audio) // 2  # rough guess, you could be more precise if needed
-        song_offsets[song_b] += used_ms
+        # How much of song B was used in this transition
+        song_offsets[song_b] += used_ms_b
 
         # Clean up
         shutil.rmtree(transition_dir)
