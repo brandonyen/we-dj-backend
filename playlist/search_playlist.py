@@ -38,7 +38,12 @@ def search_and_download(query, output_dir, cookie_path):
         ydl.download([youtube_url])
 
 def search_all(queries: List[str], output_path: str, cookie_path: str):
+    paths = []
+
     for index, query in enumerate(queries):
         query = query + " official audio"
         song_path = os.path.join(output_path, str(index))
         search_and_download(query, song_path, cookie_path)
+        paths.append(song_path + ".mp3")
+
+    return paths
