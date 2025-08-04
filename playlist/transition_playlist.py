@@ -93,7 +93,7 @@ def match_bpm(songs_dir, target_path):
 
     return stem_path, stretch_ratio
 
-def create_transition(songs_dir, transition_type="crossfade"):
+def create_transition(songs_dir, vticf, transition_type="crossfade"):
     # Load stems for current song
     vocals_current = AudioSegment.from_file(songs_dir + "/current_song" + "/vocals.wav")
     bass_current   = AudioSegment.from_file(songs_dir + "/current_song" + "/bass.wav")
@@ -148,8 +148,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
     transition_start_time = int(fade_start_time_transition * 1000)
     transition_start_other = vocals_current_down
     
-    before_cross_a = 0
-    before_cross_b = 0
+    a_cut = 60000-vticf
+    b_cut = vticf
 
     if transition_type == "crossfade":
         crossfade_duration = vocals_transition_in - vocals_current_down
@@ -173,8 +173,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = full_current + current_fade_out + transition_vocals_fade_in + transition_remainder
         output_file = songs_dir + "/dj_transition.mp3"
 
-        before_cross_a = 60000 - vocals_current_down
-        before_cross_b = vocals_current_down
+        vticf = transition_start_time+2*crossfade_duration
 
     elif transition_type == "scratch":
         scratch_start = transition_start_other
@@ -232,8 +231,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = part1 + part1_5 + part2 + part2_5 + part3
         output_file = songs_dir + "/dj_transition.mp3"
 
-        before_cross_a = 60000 - vocals_current_down + crossfade_duration
-        before_cross_b = vocals_current_down-crossfade_duration
+        vticf = int((vocals_transition_in+tease_duration_ms + crossfade_duration) * ratio1)
     
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
@@ -241,7 +239,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
 
-    return before_cross_a, before_cross_b
+    return a_cut, b_cut, vticf
 
 
 def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"):
@@ -251,8 +249,7 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
     final_mix = AudioSegment.silent(duration=0)
     os.makedirs(temp_root, exist_ok=True)
 
-    # Track how far into each song has already been played
-    song_offsets = {path: 0 for path in song_paths}
+    vticf = 0
 
     for i in range(len(song_paths) - 1):
         song_a = song_paths[i]
@@ -288,19 +285,20 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
         if transition_type == "none":
             matched_vocals_path, ratio = match_bpm(transition_dir, transition_dir + "/transition_song/vocals.wav")
             if 0.97 <= ratio <= 1.03:
-                before_a, before_b = create_transition(transition_dir, transition_type='vocals_crossover')
+                a_cut, b_cut, new_vticf = create_transition(transition_dir, vticf, transition_type='vocals_crossover')
             else:
-                before_a, before_b = create_transition(transition_dir, transition_type='crossfade')
+                a_cut, b_cut, new_vticf = create_transition(transition_dir, vticf, transition_type='crossfade')
         else:
-            before_a, before_b = create_transition(transition_dir, transition_type=transition_type)
+            a_cut, b_cut, new_vticf = create_transition(transition_dir, vticf, transition_type=transition_type)
+        
+        vticf = new_vticf
 
         # Load transition audio
         transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
         transition_audio = AudioSegment.from_file(transition_audio_path)
 
-        
-        transition_audio = transition_audio[before_b:]
-        final_mix = final_mix[:-before_a]
+        transition_audio = transition_audio[b_cut:]
+        final_mix = final_mix[:-max(0, a_cut)]
         final_mix += transition_audio
 
         # Clean up
@@ -308,4 +306,3 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
 
     final_mix.export(output_file, format="mp3")
     print(f"✅ Final mix saved to {output_file}")
-
