@@ -247,7 +247,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     return start_b
 
 
-def create_full_mix(uuid_folder, song_paths, transition_type="none", output_file="playlist_transition.mp3"):
+def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"):
     temp_root = os.path.join(uuid_folder, "temp_songs")
     assert len(song_paths) >= 2, "Need at least two songs for transitions."
 
