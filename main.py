@@ -1,7 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 from connector import search_download, transition_songs
@@ -12,6 +11,8 @@ import shutil
 import urllib.parse
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC
+from typing import List
+import pandas as pd
 
 app = FastAPI()
 load_dotenv()
@@ -100,3 +101,33 @@ def get_song(song_uuid: str):
 @app.get('/api/get_thumbnail')
 def get_thumbnail(song_uuid: str, thumbnail_type: str):
     return FileResponse(f'temp/{song_uuid}/{thumbnail_type}.jpg', media_type="image/jpeg")
+
+@app.get('/api/get_all_songs')
+def get_all_songs():
+    df = pd.read_csv("song_metadata.csv")
+    filenames = df["filename"].dropna().astype(str).tolist()
+    return filenames
+
+@app.post('/api/delete_songs')
+async def delete_songs(request: Request):
+    data = await request.json()
+    song_ids: List[str] = data.get("song_ids", [])
+
+    df = pd.read_csv('song_metadata.csv')
+    not_deleted = []
+
+    for song_id in song_ids:
+        file_path = os.path.join('songs', song_id)
+
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                not_deleted.append(song_id)
+        else:
+            not_deleted.append(song_id)
+
+    df = df[~df['filename'].isin(song_ids)]
+    df.to_csv('song_metadata.csv', index=False)
+
+    return {"not_deleted": not_deleted}

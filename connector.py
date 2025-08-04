@@ -5,6 +5,12 @@ from find_best_transition import find_best_transition
 from transition import extract_chorus, split_audio, create_transition, match_bpm
 import pandas as pd
 import shutil
+import re
+import unicodedata
+
+def make_safe_filename(name):
+    name = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode('ascii')
+    return re.sub(r'[\\/:"*?<>|]', '_', name)
 
 def search_download(query, path, cookie_path):
     current_song_name = search_and_download_youtube_song(query, path + '/current_song', cookie_path)
@@ -18,7 +24,7 @@ def search_download(query, path, cookie_path):
     transition_song_name = find_best_transition(current_song_data, 'song_metadata.csv')
     df = pd.read_csv('song_metadata.csv')
     if not ((df['filename'] == current_song_name).any()):
-        safe_name = current_song_name.replace("/", "_").replace("\\", "_")
+        safe_name = make_safe_filename(current_song_name)
         new_row = {
             'filename': safe_name,
             'bpm': bpm,
