@@ -148,6 +148,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
     transition_start_time = int(fade_start_time_transition * 1000)
     transition_start_other = vocals_current_down
 
+    start_b = 0
+
     if transition_type == "crossfade":
         crossfade_duration = vocals_transition_in - vocals_current_down
 
@@ -170,6 +172,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
         final_transition = full_current + current_fade_out + transition_vocals_fade_in + transition_remainder
         output_file = songs_dir + "/dj_transition.mp3"
 
+        start_b = int(transition_start_time+2*crossfade_duration)
+
     elif transition_type == "scratch":
         scratch_start = transition_start_other
         full_current = song_current[:scratch_start]
@@ -178,6 +182,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
 
         final_transition = full_current + scratch_loop + song_transition
         output_file = songs_dir + "/dj_transition.mp3"
+
+        start_b = 0
 
     elif transition_type == "crazy_scratch":
         scratch_start = transition_start_other
@@ -191,6 +197,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
         # Full transition
         final_transition = full_current + scratch_loop + song_transition
         output_file = songs_dir + "/dj_transition.mp3"
+
+        start_b = 0
     
     elif transition_type == "vocals_crossover":
         matched_vocals_path, ratio1 = match_bpm(songs_dir, songs_dir + "/transition_song/vocals.wav")
@@ -225,6 +233,8 @@ def create_transition(songs_dir, transition_type="crossfade"):
 
         final_transition = part1 + part1_5 + part2 + part2_5 + part3
         output_file = songs_dir + "/dj_transition.mp3"
+
+        start_b = int((vocals_transition_in+tease_duration_ms + crossfade_duration) * ratio1)
     
     else:
         raise ValueError(f"Unsupported transition type: {transition_type}")
@@ -232,9 +242,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
 
-    # Return how much of song B was used
-    used_from_b = transition_start_time + 2 * crossfade_duration
-    return used_from_b  # in ms
+    return start_b
 
 
 def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output_file="full_mix.mp3"):
@@ -284,15 +292,16 @@ def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output
         split_audio(chorus_b_renamed, transition_song_dir)
 
         # Create transition
-        used_ms_b = create_transition(transition_dir, transition_type=transition_type)
-
+        start_b = create_transition(transition_dir, transition_type=transition_type)
+        
         # Load the resulting transition audio
         transition_audio_path = os.path.join(transition_dir, "dj_transition.mp3")
         transition_audio = AudioSegment.from_file(transition_audio_path)
-        final_mix += transition_audio
 
-        # How much of song B was used in this transition
-        song_offsets[song_b] += used_ms_b
+        # Offset the transition amount for duplicates
+        final_mix = final_mix[:60-start_b]
+        transition_audio = transition_audio[start_b:]
+        final_mix += transition_audio
 
         # Clean up
         shutil.rmtree(transition_dir)
