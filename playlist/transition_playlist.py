@@ -299,7 +299,7 @@ def create_full_mix(uuid_folder, song_paths, transition_type="crossfade", output
         transition_audio = AudioSegment.from_file(transition_audio_path)
 
         # Offset the transition amount for duplicates
-        final_mix = final_mix[:60-start_b]
+        final_mix = final_mix[:60000-start_b]
         transition_audio = transition_audio[start_b:]
         final_mix += transition_audio
 
