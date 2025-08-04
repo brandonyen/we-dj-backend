@@ -242,7 +242,7 @@ def create_transition(songs_dir, transition_type="crossfade"):
     final_transition.export(output_file, format="mp3")
     print(f"{transition_type.title()} DJ Transition created!")
 
-    return a_length, start_b
+    return start_b
 
 
 def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"):
@@ -306,7 +306,9 @@ def create_full_mix(uuid_folder, song_paths, output_file, transition_type="none"
         transition_audio = AudioSegment.from_file(transition_audio_path)
 
         # Offset the transition amount for duplicates
-        final_mix = final_mix[:-(60000-start_b)]
+        trim_duration = start_b - song_offsets[song_paths[i]]
+        final_mix = final_mix[:-trim_duration]
+        
         transition_audio = transition_audio[start_b:]
         final_mix += transition_audio
 
