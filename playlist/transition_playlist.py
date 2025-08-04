@@ -231,7 +231,7 @@ def create_transition(songs_dir, vticf, transition_type="crossfade"):
         final_transition = part1 + part1_5 + part2 + part2_5 + part3
         output_file = songs_dir + "/dj_transition.mp3"
 
-        vticf = int((vocals_transition_in+tease_duration_ms + crossfade_duration) / ratio1)
+        vticf = vocals_transition_in + tease_duration_ms + crossfade_duration
         print(vticf)
     
     else:
